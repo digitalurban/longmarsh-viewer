@@ -71,7 +71,7 @@ Heights are the maximum parameters from Scoping Report §4.4 and the ZTV assumpt
 
 ## Disclaimer
 
-This is an independent, unofficial and non-commercial visualisation. It is not produced or endorsed by EPL Norfolk Limited, Evolution Power, the Planning Inspectorate, the government or any council. It was compiled in a short time from documents published in October 2026 and may contain errors or omissions. The scheme and its documents will change.
+This is an independent, unofficial and non-commercial visualisation. It is not produced or endorsed by EPL Norfolk Limited, Evolution Power, the Planning Inspectorate, the government or any council. It is based on documents published in October 2026 and may contain errors or omissions. The scheme and its documents will change.
 
 Map shapes are approximate. Anything marked "awaiting information" is a presumption made for this viewer. Distances are approximate. The Objections and Respond content summarises published documents and policy; it is not legal, planning or other professional advice. Check everything against the original documents before relying on it. To the extent permitted by law, no responsibility is accepted for any loss or decision arising from its use.
 

@@ -161,17 +161,52 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
     <p class="unoff"><span class="await-chip">Unofficial</span><span>Not advice. Check the official documents.</span><button class="linkbtn" id="showDisc">Disclaimer</button></p>
   </header>
   <nav class="tabs" role="tablist">
+    <button role="tab" aria-selected="false" data-tab="howto">How to use</button>
     <button role="tab" aria-selected="true" data-tab="layers">Map</button>
     <button role="tab" aria-selected="false" data-tab="home">Near me</button>
     <button role="tab" aria-selected="false" data-tab="villages">Villages</button>
-    <button role="tab" aria-selected="false" data-tab="unknowns">Awaiting</button>
     <button role="tab" aria-selected="false" data-tab="facts">Facts</button>
+    <button role="tab" aria-selected="false" data-tab="unknowns">Awaiting</button>
     <button role="tab" aria-selected="false" data-tab="objections">Objections</button>
     <button role="tab" aria-selected="false" data-tab="respond">Respond</button>
     <button role="tab" aria-selected="false" data-tab="docs">Documents</button>
     <button role="tab" aria-selected="false" data-tab="disclaimer">Disclaimer</button>
   </nav>
   <div class="body">
+
+    <section data-panel="howto" hidden>
+      <h2>Getting around the map</h2>
+      <ul class="plain">
+        <li><b>Move:</b> drag the map. <b>Zoom:</b> scroll, pinch, or use the + and − buttons (bottom right).</li>
+        <li><b>Tilt and turn (3D):</b> right-click and drag, or hold Ctrl and drag. On a phone or tablet, drag up or down with two fingers to tilt, and twist to turn. The compass button (bottom right) turns the map back to north.</li>
+        <li><b>OpenStreetMap / Aerial</b> (top right) switches between a street map and aerial photography.</li>
+        <li><b>2D / 3D</b> (top right) flattens the map or raises each zone to its maximum published height.</li>
+        <li>On a phone, tap the grey bar at the top of this panel to shrink or expand it.</li>
+      </ul>
+      <h2>Finding your way round the scheme</h2>
+      <ul class="plain">
+        <li><b>Map tab:</b> the buttons <i>Whole scheme</i>, <i>Western Site &amp; data centre</i>, <i>Eastern Site</i> and <i>Walpole</i> fly you to each area.</li>
+        <li><b>Layers:</b> tick or untick any item in the Map tab to show or hide it. <span class="pub-chip">Published</span> layers come from the developer's plans. <span class="await-chip">Awaiting information</span> layers are presumptions where details haven't been published.</li>
+        <li><b>Click any shape</b> to see what it is, its maximum height, its source document and what is still unknown. The Near me tab shows that spot's distances to each part of the scheme.</li>
+      </ul>
+      <h2>Checking your own area</h2>
+      <ul class="plain">
+        <li><b>Near me tab:</b> enter a postcode, or press <i>Use my location</i> (your browser will ask permission first). You'll see straight-line distances to the solar areas, the data centre zone, the substations, the overhead line and the site boundary.</li>
+        <li>From there, <b>Street View facing it</b> opens Google Street View at that spot, pointing towards the nearest part of the scheme. <b>Stand here in 3D</b> drops you to eye level on this map.</li>
+        <li><b>Villages tab:</b> 45 nearby villages, sorted by distance to the site boundary. Tap one to see its distances and stand there in 3D.</li>
+      </ul>
+      <h2>Reading and responding</h2>
+      <ul class="plain">
+        <li><b>Facts:</b> key figures, maximum heights, design commitments and the timeline.</li>
+        <li><b>Awaiting:</b> what the developer hasn't published yet, and the presumptions this map makes.</li>
+        <li><b>Objections:</b> issues people may raise, with what the documents say and the developer's position.</li>
+        <li><b>Respond:</b> deadlines, postal and email addresses for the scheme consultation and the government's data centre policy consultation.</li>
+        <li><b>Documents:</b> links to the official documents online.</li>
+        <li><b>Download</b> (Map tab): the map data as GeoJSON, for use in GIS software.</li>
+      </ul>
+      <p class="note">Please read the Disclaimer tab. This map is unofficial and approximate, so check anything important against the original documents.</p>
+      <div class="btnrow"><button class="btn primary" id="goMap">Go to the map</button></div>
+    </section>
 
     <section data-panel="layers">
       <h3 class="grp"><span class="pub-chip">Published</span> From the applicant's plans</h3>
@@ -188,7 +223,6 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
         <button class="btn" data-fly="walpole">Walpole</button>
       </div>
       <div class="btnrow">
-        <button class="btn" id="kml">Download for Google Earth (.kml)</button>
         <button class="btn" id="gj">Download GeoJSON</button>
       </div>
     </section>
@@ -672,11 +706,9 @@ function report(lon,lat,title){
    <p class="note">Distances are to the edge of each published zone. Buildings, panels and towers will sit somewhere inside those zones, so the real distance to a structure may be larger. <span class="await-chip">Awaiting layout</span></p>
    <div class="btnrow">
      <a class="btn primary" target="_blank" rel="noopener" href="${svLink(lat,lon,head)}">Street View facing it</a>
-     <a class="btn" target="_blank" rel="noopener" href="${earthLink(lat,lon,head)}">Google Earth</a>
-     <a class="btn" target="_blank" rel="noopener" href="${osmLink(lat,lon)}">OpenStreetMap</a>
      <button class="btn" id="stand">Stand here in 3D</button>
    </div>
-   <p class="note">Street View shows today's view. In Google Earth, add the .kml download from the Map tab to see the zones there too.</p>`;
+   <p class="note">Street View shows today's view, not the proposals.</p>`;
   $('#stand').onclick=()=>standAt(lon,lat,head);
   showTab('home');
 }
@@ -728,6 +760,7 @@ $('#v-3d').onclick=()=>setView3D(true);$('#v-2d').onclick=()=>setView3D(false);
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-copy]');if(!b)return;const el=document.getElementById(b.dataset.copy);
   try{await navigator.clipboard.writeText(el.textContent.trim());toast('Address copied')}catch(_){const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);toast('Address selected. Press Ctrl+C or Cmd+C to copy.')}});
 $('#showDisc').onclick=()=>showTab('disclaimer');
+$('#goMap').onclick=()=>showTab('layers');
 $('#grab').onclick=()=>$('#panel').classList.toggle('min');
 
 $('#pcform').addEventListener('submit',async e=>{e.preventDefault();const pc=$('#pc').value.trim();if(!pc)return;
@@ -742,7 +775,6 @@ $('#geo').onclick=()=>{if(!navigator.geolocation){toast('Location is not availab
 
 function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 $('#gj').onclick=()=>DATA&&download('longmarsh-green-energy.geojson',JSON.stringify(DATA),'application/geo+json');
-$('#kml').onclick=()=>DATA&&download('longmarsh-green-energy.kml',toKML(DATA),'application/vnd.google-earth.kml+xml');
 function kmlColor(hex,a){const h=hex.replace('#','');return a+h.slice(4,6)+h.slice(2,4)+h.slice(0,2)}
 function toKML(g){
   const ring=(r,h)=>r.map(c=>`${c[0].toFixed(6)},${c[1].toFixed(6)},${h}`).join(' ');
