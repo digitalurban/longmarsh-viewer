@@ -101,9 +101,7 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
 .grab{display:none}
 .unoff{margin:6px 0 0;font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
 .linkbtn{appearance:none;border:0;background:none;padding:0;color:var(--accent);font:600 12.5px var(--body);text-decoration:underline;cursor:pointer}
-.modal{position:fixed;inset:0;z-index:20;background:rgba(10,16,13,.55);display:flex;align-items:center;justify-content:center;padding:16px max(16px,env(safe-area-inset-left,0px))}
-.modal .box{background:var(--panel);color:var(--ink);border-radius:12px;box-shadow:var(--shadow);max-width:560px;width:100%;max-height:88vh;overflow:auto;padding:20px 22px;display:flex;flex-direction:column;gap:10px;font-size:14.5px}
-.modal h2{margin:0}
+
 .card{border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
 .card h3{margin:0;font:600 18px/1.15 var(--display);letter-spacing:.02em}
 .deadline{font:600 13px/1.2 var(--mono);color:var(--accent)}
@@ -171,6 +169,7 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
     <button role="tab" aria-selected="false" data-tab="objections">Objections</button>
     <button role="tab" aria-selected="false" data-tab="respond">Respond</button>
     <button role="tab" aria-selected="false" data-tab="docs">Documents</button>
+    <button role="tab" aria-selected="false" data-tab="disclaimer">Disclaimer</button>
   </nav>
   <div class="body">
 
@@ -413,6 +412,18 @@ SW1A 2EG</div></dd>
         <a class="doc" href="https://gov.uk/government/publications/draft-national-policy-statement-for-data-centres" target="_blank" rel="noopener"><b>Draft National Policy Statement for Data Centres</b><span>web</span><small>The draft policy document (October 2026).</small></a>
       </div>
     </section>
+    <section data-panel="disclaimer" hidden>
+      <h2>Disclaimer</h2>
+      <p><b>An independent, unofficial guide.</b> This viewer was made to help people find and understand public information about the proposed Longmarsh Green Energy scheme. It is not produced or endorsed by EPL Norfolk Limited, Evolution Power, the Planning Inspectorate, the government, or any council.</p>
+      <p><b>Based on newly published documents.</b> The information comes from documents published in October 2026, early in the consultation. It may contain errors or omissions, and the scheme and documents will change. Sources were last checked on 29 October 2026.</p>
+      <ul class="plain">
+        <li>Map shapes are traced from the developer's indicative plans and are approximate. Anything marked <b>awaiting information</b> is a presumption made for this viewer, not part of the proposals.</li>
+        <li>Distances are approximate straight-line measurements. Do not rely on them for property, legal or financial decisions.</li>
+        <li>The Objections and Respond tabs summarise published documents and policy to help people take part. They are not legal, planning or other professional advice, and they do not represent the views of any organisation.</li>
+      </ul>
+      <p><b>Please check everything against the original documents</b> (linked in the Documents tab) before you rely on it or quote it, and seek professional advice about your own circumstances. To the extent permitted by law, no responsibility is accepted for any loss, or any decision made, as a result of using this viewer.</p>
+    </section>
+
     <section data-panel="facts" hidden>
       <div class="facts">
         <div class="fact"><b>1,980 ha</b><span>Total site, inc. cable routes</span></div>
@@ -460,36 +471,12 @@ SW1A 2EG</div></dd>
       <p class="src">§4.5.1–4.5.4</p>
       <h2>Have your say</h2>
       <p>The scheme consultation closes 26 November 2026, and the national data centre policy consultation closes 8 January 2027. Addresses and links are in the <b>Respond</b> tab.</p>
-      <h2>Disclaimer</h2>
-      <p><b>An independent, unofficial guide.</b> This viewer was made to help people find and understand public information about the proposed Longmarsh Green Energy scheme. It is not produced or endorsed by EPL Norfolk Limited, Evolution Power, the Planning Inspectorate, the government, or any council.</p>
-      <p><b>Compiled quickly from new documents.</b> The information comes from documents published in October 2026, early in the consultation, and was put together in a short time. It may contain errors or omissions, and the scheme and documents will change. Sources were last checked on 29 October 2026.</p>
-      <ul class="plain">
-        <li>Map shapes are traced from the developer's indicative plans and are approximate. Anything marked <b>awaiting information</b> is a presumption made for this viewer, not part of the proposals.</li>
-        <li>Distances are approximate straight-line measurements. Do not rely on them for property, legal or financial decisions.</li>
-        <li>The Objections and Respond tabs summarise published documents and policy to help people take part. They are not legal, planning or other professional advice, and they do not represent the views of any organisation.</li>
-      </ul>
-      <p><b>Please check everything against the original documents</b> (linked in the Documents tab) before you rely on it or quote it, and seek professional advice about your own circumstances. To the extent permitted by law, no responsibility is accepted for any loss, or any decision made, as a result of using this viewer.</p>
       <h2>About this map</h2>
       <p class="note">This is an independent visualisation, not produced by the applicant. The published shapes were extracted from the vector layers of Scoping Report Appendix A, Figure 1-3 (Layout Plan, rev 01, 13/10/2026). They were placed on the map using the Ordnance Survey 1 km grid printed on the figures. Two figures placed separately agree to within 2.5 m, and the shapes follow field edges and the existing Walpole substation on aerial imagery. The applicant calls the boundary indicative.</p>
     </section>
   </div>
 </aside>
 <div class="toast" id="toast" hidden></div>
-<div class="modal" id="disc" role="dialog" aria-modal="true" aria-labelledby="discT" hidden>
-  <div class="box">
-    <h2 id="discT">Before you use this map</h2>
-    <p><b>An independent, unofficial guide.</b> This viewer was made to help people find and understand public information about the proposed Longmarsh Green Energy scheme. It is not produced or endorsed by EPL Norfolk Limited, Evolution Power, the Planning Inspectorate, the government, or any council.</p>
-      <p><b>Compiled quickly from new documents.</b> The information comes from documents published in October 2026, early in the consultation, and was put together in a short time. It may contain errors or omissions, and the scheme and documents will change. Sources were last checked on 29 October 2026.</p>
-      <ul class="plain">
-        <li>Map shapes are traced from the developer's indicative plans and are approximate. Anything marked <b>awaiting information</b> is a presumption made for this viewer, not part of the proposals.</li>
-        <li>Distances are approximate straight-line measurements. Do not rely on them for property, legal or financial decisions.</li>
-        <li>The Objections and Respond tabs summarise published documents and policy to help people take part. They are not legal, planning or other professional advice, and they do not represent the views of any organisation.</li>
-      </ul>
-      <p><b>Please check everything against the original documents</b> (linked in the Documents tab) before you rely on it or quote it, and seek professional advice about your own circumstances. To the extent permitted by law, no responsibility is accepted for any loss, or any decision made, as a result of using this viewer.</p>
-    <div class="btnrow"><button class="btn primary" id="discOk">I understand</button></div>
-  </div>
-</div>
-
 <script>
 /* status: 'pub' = published by the applicant (shape + parameter); 'await' = presumption awaiting information */
 const LAYERS=[
@@ -740,13 +727,7 @@ function setView3D(on,animate=true){is3D=on;$('#v-3d').setAttribute('aria-presse
 $('#v-3d').onclick=()=>setView3D(true);$('#v-2d').onclick=()=>setView3D(false);
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-copy]');if(!b)return;const el=document.getElementById(b.dataset.copy);
   try{await navigator.clipboard.writeText(el.textContent.trim());toast('Address copied')}catch(_){const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);toast('Address selected. Press Ctrl+C or Cmd+C to copy.')}});
-const disc=$('#disc');
-function openDisc(){disc.hidden=false;$('#discOk').focus()}
-$('#discOk').onclick=()=>{disc.hidden=true;try{localStorage.setItem('lm_disc_ok','2026-10-29')}catch(_){}};
-$('#showDisc').onclick=openDisc;
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!disc.hidden)$('#discOk').click()});
-let seen=null;try{seen=localStorage.getItem('lm_disc_ok')}catch(_){}
-if(!seen)openDisc();
+$('#showDisc').onclick=()=>showTab('disclaimer');
 $('#grab').onclick=()=>$('#panel').classList.toggle('min');
 
 $('#pcform').addEventListener('submit',async e=>{e.preventDefault();const pc=$('#pc').value.trim();if(!pc)return;
