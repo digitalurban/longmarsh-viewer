@@ -18,30 +18,15 @@ Click any shape to see its source and status.
 - **Map tab**: switch each layer on or off and fly to the Western Site (data centre), the Eastern Site or Walpole. In 3D every element is drawn at its maximum height from the Scoping Report.
 - **Near me tab**: enter a postcode (looked up with postcodes.io), use your location, or tap the map. You get the distance to the nearest panels, the data centre, the substations and the overhead line, plus three views:
   - **Street View facing it**: opens Google Street View at that spot, pointing towards the nearest proposed structure. This shows today's view.
-  - **Google Earth**: opens Google Earth Web at the same spot and heading.
   - **Stand here in 3D**: puts the camera at eye level in this map, with the proposed structures drawn in.
 - **Villages tab**: 45 nearby villages, sorted by distance to the site boundary. Tap one to stand in it and look towards the scheme.
 - **Facts tab**: the key numbers, heights, design commitments, timeline and how to respond.
-- **Downloads**: a KML file to open in Google Earth (published zones plus presumed height envelopes, in separate folders), and the GeoJSON.
-
-## Detailed Google Earth files (`google-earth/`)
-
-- `longmarsh-infrastructure.kmz` contains:
-  - published zone outlines;
-  - fencing along presumed lines, drawn at the published heights (2.5 m wire mesh, 3 m palisade);
-  - CCTV poles (5 m, spacing presumed);
-  - lighting notes;
-  - overhead line towers and conductors (heights published, positions presumed);
-  - illustrative data-centre massing;
-  - worst-case height envelopes.
-- `longmarsh-panels-west.kmz` and `longmarsh-panels-east.kmz` contain about 28,000 3D solar tables. They're drawn to the report's parameters: 25° tilt, 0.8 m bottom edge, 4.5 m top edge, south facing, rows 3.5 m apart and 3.2 m inside the fence. The row layout itself is a presumption.
-
-Open them in Google Earth Pro (File → Open), or in Google Earth Web (File → Open local KML file).
+- **Download**: the map data as GeoJSON.
 
 ## Publish it on GitHub Pages
 
 1. Create a new repository, for example `longmarsh-viewer`.
-2. Upload everything in this folder (`index.html`, `data/`, `google-earth/`, `method/`, `README.md`), keeping the folder structure.
+2. Upload everything in this folder (`index.html`, `data/`, `method/`, `README.md`), keeping the folder structure.
 3. In the repository, go to **Settings → Pages**, set **Source** to *Deploy from a branch*, pick `main` and `/ (root)`, then save.
 4. After a minute the site is live at `https://<your-username>.github.io/longmarsh-viewer/`.
 

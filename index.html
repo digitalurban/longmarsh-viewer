@@ -171,6 +171,7 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
     <button role="tab" aria-selected="false" data-tab="objections">Objections</button>
     <button role="tab" aria-selected="false" data-tab="respond">Respond</button>
     <button role="tab" aria-selected="false" data-tab="docs">Documents</button>
+    <button role="tab" aria-selected="false" data-tab="local">Local info</button>
     <button role="tab" aria-selected="false" data-tab="disclaimer">Disclaimer</button>
   </nav>
   <div class="body">
@@ -186,7 +187,7 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
       </ul>
       <h2>Finding your way round the scheme</h2>
       <ul class="plain">
-        <li><b>Map tab:</b> the buttons <i>Whole scheme</i>, <i>Western Site &amp; data centre</i>, <i>Eastern Site</i> and <i>Walpole</i> fly you to each area.</li>
+        <li><b>Map tab:</b> the buttons <i>Whole scheme</i>, <i>Western Site &amp; data centre</i>, <i>Eastern Site</i> and <i>Walpole</i> take you to each area on the flat (2D) map. Press <i>3D</i> (top right) to raise the heights.</li>
         <li><b>Layers:</b> tick or untick any item in the Map tab to show or hide it. <span class="pub-chip">Published</span> layers come from the developer's plans. <span class="await-chip">Awaiting information</span> layers are presumptions where details haven't been published.</li>
         <li><b>Click any shape</b> to see what it is, its maximum height, its source document and what is still unknown. The Near me tab shows that spot's distances to each part of the scheme.</li>
       </ul>
@@ -194,7 +195,7 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
       <ul class="plain">
         <li><b>Near me tab:</b> enter a postcode, or press <i>Use my location</i> (your browser will ask permission first). You'll see straight-line distances to the solar areas, the data centre zone, the substations, the overhead line and the site boundary.</li>
         <li>From there, <b>Street View facing it</b> opens Google Street View at that spot, pointing towards the nearest part of the scheme. <b>Stand here in 3D</b> drops you to eye level on this map.</li>
-        <li><b>Villages tab:</b> 45 nearby villages, sorted by distance to the site boundary. Tap one to see its distances and stand there in 3D.</li>
+        <li><b>Villages tab:</b> 45 nearby villages, sorted by distance to the site boundary. Tap one to zoom to it on the flat map, framed with the nearest part of the scheme, and see its distances. Use <i>Stand here in 3D</i> for an eye-level view.</li>
       </ul>
       <h2>Reading and responding</h2>
       <ul class="plain">
@@ -203,6 +204,7 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
         <li><b>Objections:</b> issues people may raise, with what the documents say and the developer's position.</li>
         <li><b>Respond:</b> deadlines, postal and email addresses for the scheme consultation and the government's data centre policy consultation.</li>
         <li><b>Documents:</b> links to the official documents online.</li>
+        <li><b>Local info:</b> parish council pages and local campaigns about Longmarsh.</li>
         <li><b>Download</b> (Map tab): the map data as GeoJSON, for use in GIS software.</li>
       </ul>
       <p class="note">Please read the Disclaimer tab. This map is unofficial and approximate, so check anything important against the original documents.</p>
@@ -240,7 +242,7 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
     </section>
 
     <section data-panel="villages" hidden>
-      <p class="note">Straight-line distance from each village's OpenStreetMap centre point to the nearest edge of the published site boundary. For Tilney St Lawrence the parish church is used, because the OpenStreetMap point sits in a field. Individual homes may be much closer. Tap a village to stand there in 3D.</p>
+      <p class="note">Straight-line distance from each village's OpenStreetMap centre point to the nearest edge of the published site boundary. For Tilney St Lawrence the parish church is used, because the OpenStreetMap point sits in a field. Individual homes may be much closer. Tap a village to zoom to it.</p>
       <div class="vlist" id="vlist"></div>
     </section>
 
@@ -447,6 +449,21 @@ SW1A 2EG</div></dd>
         <a class="doc" href="https://gov.uk/government/publications/draft-national-policy-statement-for-data-centres" target="_blank" rel="noopener"><b>Draft National Policy Statement for Data Centres</b><span>web</span><small>The draft policy document (October 2026).</small></a>
       </div>
     </section>
+    <section data-panel="local" hidden>
+      <p>Key local sources of information about Longmarsh. These are independent websites. This viewer isn't responsible for their content, and linking to them doesn't mean it endorses them.</p>
+      <h2>Parish councils</h2>
+      <div class="doclist">
+        <a class="doc" href="https://finchamparishcouncil.uk/longmarsh" target="_blank" rel="noopener"><b>Fincham Parish Council – Longmarsh</b><span>web</span><small>The council's Longmarsh page, with links to the project documents and the Planning Inspectorate.</small></a>
+        <a class="doc" href="https://bartonbendish-pc.gov.uk/" target="_blank" rel="noopener"><b>Barton Bendish Parish Council</b><span>web</span><small>Official parish council website.</small></a>
+        <a class="doc" href="https://tilneystlawrence-pc.gov.uk/" target="_blank" rel="noopener"><b>Tilney St Lawrence Parish Council</b><span>web</span><small>Official parish council website.</small></a>
+      </div>
+      <h2>Campaigns</h2>
+      <div class="doclist">
+        <a class="doc" href="https://www.change.org/p/stop-longmarsh-energy-protect-rural-west-norfolk-from-4-700-acre-data-centre-project" target="_blank" rel="noopener"><b>Petition: Stop Longmarsh Energy</b><span>change.org</span><small>A residents' petition opposing the scheme. Signing a petition is separate from responding to the formal consultations (see Respond).</small></a>
+      </div>
+      <p class="note">Links checked on 29 October 2026.</p>
+    </section>
+
     <section data-panel="disclaimer" hidden>
       <h2>Disclaimer</h2>
       <p><b>An independent, unofficial guide.</b> This viewer was made to help people find and understand public information about the proposed Longmarsh Green Energy scheme. It is not produced or endorsed by EPL Norfolk Limited, Evolution Power, the Planning Inspectorate, the government, or any council.</p>
@@ -714,6 +731,15 @@ function report(lon,lat,title){
   $('#stand').onclick=()=>standAt(lon,lat,head);
   showTab('home');
 }
+function flyTo2D(lon,lat,nb){
+  // top-down view framing the place and the nearest part of the scheme
+  setView3D(false,false);
+  const wide=window.innerWidth>760;
+  const pad=wide?{top:60,bottom:60,left:440,right:60}:{top:40,bottom:Math.round(window.innerHeight*0.5),left:30,right:30};
+  if(nb&&nb.d>0){const t=unP(nb.q);
+    map.fitBounds([[Math.min(lon,t[0]),Math.min(lat,t[1])],[Math.max(lon,t[0]),Math.max(lat,t[1])]],{padding:pad,maxZoom:15.5,pitch:0,bearing:0,duration:1800,essential:true});
+  }else map.flyTo({center:[lon,lat],zoom:15,pitch:0,bearing:0,duration:1800,essential:true});
+}
 function standAt(lon,lat,head){
   setView3D(true,false);
   map.flyTo({center:[lon,lat],zoom:16.4,pitch:82,bearing:head,duration:2200,essential:true});
@@ -723,7 +749,7 @@ function buildVillages(){
   const rows=VILL.map(v=>({v,d:nearest(P(v.lon,v.lat),TARGETS.site).d})).sort((a,b)=>a.d-b.d);
   $('#vlist').innerHTML=rows.map(r=>`<button class="vill" data-i="${VILL.indexOf(r.v)}">${esc(r.v.name)}<span>${fmt(r.d)}</span></button>`).join('');
   $('#vlist').addEventListener('click',e=>{const b=e.target.closest('.vill');if(!b)return;const v=VILL[+b.dataset.i];
-    report(v.lon,v.lat,v.name);const pt=P(v.lon,v.lat);const nb=nearestBuilt(pt);standAt(v.lon,v.lat,nb.d?bearing(pt,nb.q):0)});
+    report(v.lon,v.lat,v.name);flyTo2D(v.lon,v.lat,nearestBuilt(P(v.lon,v.lat)))});
 }
 
 /* ---------- popups: source and status for every shape ---------- */
@@ -750,7 +776,7 @@ map.on('click',e=>{
 function showTab(name){document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===name));
   document.querySelectorAll('[data-panel]').forEach(s=>s.hidden=s.dataset.panel!==name);$('#panel').classList.remove('min')}
 document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)showTab(b.dataset.tab)});
-document.querySelectorAll('[data-fly]').forEach(b=>b.onclick=()=>{const v=VIEWS[b.dataset.fly];map.flyTo({...v,pitch:is3D?v.pitch:0,duration:1800})});
+document.querySelectorAll('[data-fly]').forEach(b=>b.onclick=()=>{const v=VIEWS[b.dataset.fly];setView3D(false,false);map.flyTo({...v,pitch:0,bearing:0,duration:1800})});
 function setBase(sat){map.setLayoutProperty('sat','visibility',sat?'visible':'none');map.setLayoutProperty('osm','visibility',sat?'none':'visible');
   if(map.getLayer('vill-lbl'))map.setLayoutProperty('vill-lbl','visibility',sat?'visible':'none');
   $('#bm-sat').setAttribute('aria-pressed',sat);$('#bm-map').setAttribute('aria-pressed',!sat)}
@@ -769,10 +795,10 @@ $('#pcform').addEventListener('submit',async e=>{e.preventDefault();const pc=$('
   try{const r=await fetch('https://api.postcodes.io/postcodes/'+encodeURIComponent(pc));const j=await r.json();
     if(j.status!==200)throw new Error(j.error||'not found');
     const {longitude:lon,latitude:lat,postcode}=j.result;report(lon,lat,postcode);
-    const pt=P(lon,lat);const nb=nearestBuilt(pt);standAt(lon,lat,nb.d?bearing(pt,nb.q):0);
+    flyTo2D(lon,lat,nearestBuilt(P(lon,lat)));
   }catch(err){toast('That postcode was not found. Check it and try again, or tap the map instead.')}});
 $('#geo').onclick=()=>{if(!navigator.geolocation){toast('Location is not available in this browser.');return}
-  navigator.geolocation.getCurrentPosition(p=>{const lon=p.coords.longitude,lat=p.coords.latitude;report(lon,lat,'Your location');const pt=P(lon,lat);const nb=nearestBuilt(pt);standAt(lon,lat,nb.d?bearing(pt,nb.q):0)},
+  navigator.geolocation.getCurrentPosition(p=>{const lon=p.coords.longitude,lat=p.coords.latitude;report(lon,lat,'Your location');flyTo2D(lon,lat,nearestBuilt(P(lon,lat)))},
   ()=>toast('Location permission was refused. Enter a postcode instead.'),{enableHighAccuracy:true,timeout:10000})};
 
 function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
