@@ -1,0 +1,785 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Longmarsh Data Centre/Solar Farm Viewer</title>
+<meta name="description" content="Independent interactive map of the proposed Longmarsh Green Energy solar farm, battery storage, overhead lines and data centre campus in west Norfolk, built from the EIA Scoping Report (October 2026). Published information and presumptions are marked separately.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="data/longmarsh-data.js"></script>
+<style>
+/* Layout: full-bleed map; a field-notebook panel docked left on desktop, a bottom sheet on phones.
+   Two visual registers: solid = published by the applicant; amber hatch = presumption awaiting information. */
+:root{
+  --bg:#f4f5f0; --panel:#fbfcf8; --ink:#1d2420; --muted:#5d6a62; --line:#d9ded5;
+  --accent:#1f6b52; --accent-ink:#ffffff; --await:#c27c0e; --await-bg:#fdf3e1; --await-ink:#6b4105; --chip:#e9ede4;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --shadow:0 6px 24px rgba(20,30,25,.18);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121614; --panel:#181e1b; --ink:#e7ece6; --muted:#9aa79f; --line:#2c3530;
+  --accent:#5cc49c; --accent-ink:#0d1a14; --await:#f0a840; --await-bg:#2d2312; --await-ink:#f6d39b; --chip:#232b27; --shadow:0 6px 24px rgba(0,0,0,.5); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121614; --panel:#181e1b; --ink:#e7ece6; --muted:#9aa79f; --line:#2c3530;
+  --accent:#5cc49c; --accent-ink:#0d1a14; --await:#f0a840; --await-bg:#2d2312; --await-ink:#f6d39b; --chip:#232b27; --shadow:0 6px 24px rgba(0,0,0,.5); color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);overflow:hidden}
+#map{position:fixed;inset:0}
+.panel{position:fixed;z-index:5;top:calc(12px + env(safe-area-inset-top,0px));left:calc(12px + env(safe-area-inset-left,0px));bottom:12px;width:390px;
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden}
+.panel header{padding:16px 18px 10px;border-bottom:1px solid var(--line)}
+.eyebrow{font:500 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font:700 30px/1.02 var(--display);margin:6px 0 4px;text-wrap:balance;letter-spacing:.005em}
+.sub{color:var(--muted);font-size:13.5px;margin:0}
+.tabs{display:flex;flex-wrap:wrap;gap:0 2px;padding:6px 10px 0;border-bottom:1px solid var(--line)}
+.tabs button{flex:1 1 auto;padding-left:6px!important;padding-right:6px!important;border:0;background:none;color:var(--muted);font:600 14px var(--display);letter-spacing:.02em;white-space:nowrap;text-transform:uppercase;padding:8px 2px 9px;border-bottom:3px solid transparent;cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.body{overflow:auto;padding:14px 18px 18px;flex:1;min-height:0}
+.body section{display:flex;flex-direction:column;gap:12px}
+h2{font:600 18px/1.2 var(--display);letter-spacing:.03em;text-transform:uppercase;margin:6px 0 0}
+h3.grp{font:600 13px/1.2 var(--mono);letter-spacing:.06em;text-transform:uppercase;margin:4px 0 0;color:var(--muted);display:flex;align-items:center;gap:8px}
+p{margin:0}
+.legend{display:flex;flex-direction:column;gap:1px}
+.lrow{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:10px;padding:6px 6px;border-radius:6px;cursor:pointer;position:relative}
+.lrow:hover{background:var(--chip)}
+.lrow input{position:absolute;opacity:0;pointer-events:none}
+.sw{width:24px;height:16px;border-radius:3px;border:1.5px solid rgba(0,0,0,.35)}
+.sw.hatch{border:1.5px dashed var(--await)}
+.lrow input:not(:checked) ~ .sw{opacity:.25}
+.lrow input:not(:checked) ~ .lname{color:var(--muted);text-decoration:line-through}
+.lrow input:focus-visible ~ .sw{outline:2px solid var(--accent);outline-offset:2px}
+.lname{font-size:14px;line-height:1.25}
+.ht{font:500 12px var(--mono);color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.await-chip{display:inline-block;font:600 10.5px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--await-ink);background:var(--await-bg);border:1px solid var(--await);border-radius:4px;padding:3px 6px;white-space:nowrap}
+.pub-chip{display:inline-block;font:600 10.5px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:3px 6px;white-space:nowrap}
+.awaitbox{background:var(--await-bg);border:1px solid var(--await);border-radius:8px;padding:10px 12px;font-size:13.5px;color:var(--ink);display:flex;flex-direction:column;gap:6px}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px}
+.btn{appearance:none;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:600 13px var(--body);padding:8px 11px;border-radius:7px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:focus-visible,.tabs button:focus-visible,.vill:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.fact{background:var(--panel);padding:10px 12px}
+.fact b{display:block;font:600 22px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.fact span{font-size:12.5px;color:var(--muted)}
+.src{font:400 11.5px/1.35 var(--mono);color:var(--muted)}
+.note{font-size:12.5px;color:var(--muted);border-left:3px solid var(--line);padding-left:10px}
+.search{display:flex;gap:6px}
+.search input{flex:1;min-width:0;font:500 15px var(--body);padding:9px 11px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink)}
+.report{border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.report h3{margin:0;font:600 17px var(--display);letter-spacing:.02em}
+.dl{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:13.5px;margin:0}
+.dl dd{margin:0;font:500 13px var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.dl dt{color:var(--muted)}
+.vlist{display:flex;flex-direction:column}
+.vill{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:baseline;padding:8px 6px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);font:500 14px var(--body);text-align:left;cursor:pointer}
+.vill:hover{background:var(--chip)}
+.vill span{font:500 12.5px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.tl{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px}
+.tl b{font:500 12.5px var(--mono);color:var(--accent);white-space:nowrap}
+.mapctl{position:fixed;z-index:4;right:calc(12px + env(safe-area-inset-right,0px));top:calc(12px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.seg{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);overflow:hidden}
+.seg button{border:0;background:none;color:var(--ink);font:600 13px var(--body);padding:8px 11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.toast{position:fixed;z-index:6;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13.5px;max-width:90vw}
+.maplibregl-popup{max-width:320px!important}
+.maplibregl-popup-content{background:var(--panel);color:var(--ink);font:13.5px/1.4 var(--body);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.maplibregl-popup-content b{font:600 16px/1.2 var(--display)}
+.maplibregl-popup-tip{border-top-color:var(--panel)!important;border-bottom-color:var(--panel)!important}
+.maplibregl-popup-close-button{color:var(--muted);font-size:18px}
+.maplibregl-ctrl-attrib{font-size:11px}
+.grab{display:none}
+.unoff{margin:6px 0 0;font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+.linkbtn{appearance:none;border:0;background:none;padding:0;color:var(--accent);font:600 12.5px var(--body);text-decoration:underline;cursor:pointer}
+.modal{position:fixed;inset:0;z-index:20;background:rgba(10,16,13,.55);display:flex;align-items:center;justify-content:center;padding:16px max(16px,env(safe-area-inset-left,0px))}
+.modal .box{background:var(--panel);color:var(--ink);border-radius:12px;box-shadow:var(--shadow);max-width:560px;width:100%;max-height:88vh;overflow:auto;padding:20px 22px;display:flex;flex-direction:column;gap:10px;font-size:14.5px}
+.modal h2{margin:0}
+.card{border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.card h3{margin:0;font:600 18px/1.15 var(--display);letter-spacing:.02em}
+.deadline{font:600 13px/1.2 var(--mono);color:var(--accent)}
+.addr{font:500 13.5px/1.45 var(--mono);white-space:pre-line;background:var(--panel);border:1px dashed var(--line);border-radius:6px;padding:8px 10px;user-select:all}
+.ways{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:13.5px;align-items:baseline;margin:0}
+.ways dt{font:600 11px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ways dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.doclist{display:flex;flex-direction:column}
+.doc{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:9px 4px;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink)}
+.doc:hover{background:var(--chip)}
+.doc b{font-weight:600;font-size:14px}
+.doc span{font:500 11.5px var(--mono);color:var(--muted);white-space:nowrap}
+.doc small{grid-column:1/-1;color:var(--muted);font-size:12.5px}
+.copy{align-self:flex-start}
+.ground{border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.ground summary{cursor:pointer;list-style:none;padding:11px 12px;display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:baseline}
+.ground summary::-webkit-details-marker{display:none}
+.ground summary b{font:600 16.5px/1.2 var(--display);letter-spacing:.015em}
+.ground summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ground[open] summary{border-bottom:1px solid var(--line)}
+.ground .gbody{padding:10px 12px 12px;display:flex;flex-direction:column;gap:7px;font-size:14px}
+.ground .lbl{font:600 10.5px/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:2px}
+.doc-chip{display:inline-block;font:600 10.5px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:3px 6px;white-space:nowrap}
+@media (max-width:760px){
+  .panel{left:0;right:0;width:auto;top:auto;bottom:0;height:46vh;border-radius:14px 14px 0 0;padding-bottom:env(safe-area-inset-bottom,0px);
+    padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);transition:height .25s ease}
+  .panel.min{height:118px}
+  .grab{display:block;width:44px;height:5px;border-radius:3px;background:var(--line);margin:8px auto 0;border:0;cursor:pointer;padding:0}
+  .panel header{padding:6px 16px 8px}
+  h1{font-size:24px}
+  .sub{display:none}
+  .body{padding:12px 16px 16px}
+}
+@media (prefers-reduced-motion:reduce){.panel{transition:none}}
+</style>
+</head>
+<body>
+<div id="map" role="region" aria-label="Map of the proposed Longmarsh Green Energy site"></div>
+
+<div class="mapctl">
+  <div class="seg" role="group" aria-label="Basemap">
+    <button id="bm-map" aria-pressed="true">OpenStreetMap</button>
+    <button id="bm-sat" aria-pressed="false">Aerial</button>
+  </div>
+  <div class="seg" role="group" aria-label="View">
+    <button id="v-2d" aria-pressed="false">2D</button>
+    <button id="v-3d" aria-pressed="true">3D</button>
+  </div>
+</div>
+
+<aside class="panel" id="panel">
+  <button class="grab" id="grab" aria-label="Expand or collapse panel"></button>
+  <header>
+    <div class="eyebrow">West Norfolk · PINS EN0110048</div>
+    <h1>Longmarsh Data Centre/Solar Farm Viewer</h1>
+    <p class="sub">Longmarsh Green Energy: solar farm, battery storage, overhead lines and a 1&nbsp;GW data centre campus proposed across 1,980&nbsp;ha between Walpole and Barton Bendish.</p>
+    <p class="unoff"><span class="await-chip">Unofficial</span><span>Not advice. Check the official documents.</span><button class="linkbtn" id="showDisc">Disclaimer</button></p>
+  </header>
+  <nav class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="layers">Map</button>
+    <button role="tab" aria-selected="false" data-tab="home">Near me</button>
+    <button role="tab" aria-selected="false" data-tab="villages">Villages</button>
+    <button role="tab" aria-selected="false" data-tab="unknowns">Awaiting</button>
+    <button role="tab" aria-selected="false" data-tab="facts">Facts</button>
+    <button role="tab" aria-selected="false" data-tab="objections">Objections</button>
+    <button role="tab" aria-selected="false" data-tab="respond">Respond</button>
+    <button role="tab" aria-selected="false" data-tab="docs">Documents</button>
+  </nav>
+  <div class="body">
+
+    <section data-panel="layers">
+      <h3 class="grp"><span class="pub-chip">Published</span> From the applicant's plans</h3>
+      <div class="legend" id="legend-pub"></div>
+      <h3 class="grp"><span class="await-chip">Awaiting information</span> Presumptions</h3>
+      <div class="legend" id="legend-await"></div>
+      <div class="awaitbox">
+        <p>Anything hatched in amber, and the grey solar blocks in 3D, are <b>presumptions</b>. They show the scale of what's allowed, not a design. Exact building positions, panel rows and tower sites have not been published yet. Tap any shape to see its source.</p>
+      </div>
+      <div class="btnrow">
+        <button class="btn" data-fly="all">Whole scheme</button>
+        <button class="btn" data-fly="west">Western Site &amp; data centre</button>
+        <button class="btn" data-fly="east">Eastern Site</button>
+        <button class="btn" data-fly="walpole">Walpole</button>
+      </div>
+      <div class="btnrow">
+        <button class="btn" id="kml">Download for Google Earth (.kml)</button>
+        <button class="btn" id="gj">Download GeoJSON</button>
+      </div>
+    </section>
+
+    <section data-panel="home" hidden>
+      <p>Enter a postcode, use your location, or tap anywhere on the map. You'll see how far that spot is from each published part of the scheme, with a link to Google Street View pointing towards it.</p>
+      <form class="search" id="pcform">
+        <label for="pc" style="position:absolute;left:-9999px">Postcode</label>
+        <input id="pc" placeholder="e.g. PE34 4QX" autocomplete="postal-code">
+        <button class="btn primary" type="submit">Find</button>
+      </form>
+      <div class="btnrow"><button class="btn" id="geo">Use my location</button></div>
+      <div class="report" id="report" hidden></div>
+    </section>
+
+    <section data-panel="villages" hidden>
+      <p class="note">Straight-line distance from each village's OpenStreetMap centre point to the nearest edge of the published site boundary. For Tilney St Lawrence the parish church is used, because the OpenStreetMap point sits in a field. Individual homes may be much closer. Tap a village to stand there in 3D.</p>
+      <div class="vlist" id="vlist"></div>
+    </section>
+
+    <section data-panel="unknowns" hidden>
+      <div class="awaitbox"><p>The applicant says these parts of the scheme are <b>still being developed</b>. The map can't show them accurately until more information is published, expected in the Environmental Statement with the DCO application in April 2027.</p></div>
+      <h2>Not yet published</h2>
+      <ul class="plain">
+        <li><b>Detailed layout</b>: where panel rows, inverters, collector compounds and tracks go inside the solar areas. <span class="src">Leaflet p4; Scoping Report §4.4.8</span></li>
+        <li><b>Data centre buildings</b>: positions and shapes of up to 10 buildings (25 m maximum, 70 ha maximum footprint). The map shows the whole zone raised to 25 m instead. <span class="src">§4.4.37–4.4.38</span></li>
+        <li><b>Battery storage</b>: container layout and capacity. Its capacity will be "scaled appropriately" to the solar, and it is likely to sit next to each substation. <span class="src">§4.4.28, §4.4.32</span></li>
+        <li><b>Overhead line towers</b>: tower positions and count. Only the 100 m corridors, the 50 m and 35 m maximum heights, and "no tower within 100 m of a home" are published. <span class="src">§3.2.11, §4.4.47–4.4.50</span></li>
+        <li><b>Panel type and direction</b>: fixed or tracker, and south-facing or east–west in fields where glint and glare could affect RAF Marham. <span class="src">§4.4.5–4.4.8</span></li>
+        <li><b>Mitigation and screening areas</b>: identified but left off the layout plan. <span class="src">§4.1.1</span></li>
+        <li><b>Access and construction routes</b>: HGV routes, site entrances and compounds. <span class="src">Leaflet p4; §4.2.1</span></li>
+        <li><b>Walpole connection</b>: the boundary near Walpole substation will be refined once the connection point is confirmed. <span class="src">Leaflet p18</span></li>
+        <li><b>Community benefits</b>: the community fund and local energy initiatives. <span class="src">§4.2.2</span></li>
+        <li><b>Data centre lighting, noise and backup generator details.</b> <span class="src">§4.4.39, §4.4.54</span></li>
+      </ul>
+      <h2>Presumptions this map makes</h2>
+      <ul class="plain">
+        <li>Each built zone is raised to its published maximum height across its whole area. These are the same heights the applicant used for its visibility study (ZTV).</li>
+        <li>The overhead line is drawn down the middle of its 100 m corridor.</li>
+        <li>Towers are spaced every ~350 m (West) and ~300 m (East). This is for illustration only. No tower positions or spacings have been published.</li>
+        <li>The 300 m line is measured from the edge of each zone. The commitment applies to the buildings themselves, which haven't been placed yet.</li>
+      </ul>
+    </section>
+
+
+    <section data-panel="objections" hidden>
+      <p>Grounds people may raise about the scheme. Each one shows what the published documents say, the developer's position and points to raise. Tap a heading to open it.</p>
+      <div class="awaitbox"><p>The strongest responses are specific: a place, an effect, a policy and a change you want. Most points can go to the developer now (closes 26 November 2026), and to the Planning Inspectorate once the application has been submitted and accepted. Points about national policy, such as farmland or how data centres are approved, also belong in the government's data centre consultation (closes 8 January 2027). See <b>Respond</b>. This is not legal advice.</p></div>
+        <details class="ground"><summary><b>Loss of prime farmland (best and most versatile land)</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
+          <p><span class="lbl">The issue</span>Much of the site is predicted to be "best and most versatile" (BMV) farmland, which policy defines as Grades 1, 2 and 3a. The draft data centre policy says poorer-quality land should be used where possible.</p>
+          <p><span class="lbl">What the documents say</span>Walpole substation land is all predicted Grade&nbsp;1. Most of the Western Site, where the data centre goes, is Grade&nbsp;2 and 3a, with some Grade&nbsp;1. The Eastern Cable Route is mostly Grade&nbsp;2 and 3a, with Grade&nbsp;1 east of the River Great Ouse. The Eastern Site is Grade&nbsp;2 and 3b in the west and mostly 3a in the east. These are <i>predictive</i> grades from a national map; the developer plans field soil surveys. The draft data centre policy says that if significant development of farmland is necessary, poorer land (3b, 4, 5) should be used where possible, and that the Secretary of State should ensure higher-quality land has been avoided where possible. The borough's Local Plan (Policy LP24, as quoted in the Scoping Report) says the council will seek to protect productive and BMV land, and that applications for other uses that would adversely affect it are likely to be refused unless the benefits outweigh its loss.</p>
+          <p><span class="lbl">Developer's position</span>About 85% of land within 6.7&nbsp;km of Walpole substation, and about 95% within 20&nbsp;km, is BMV, so there is little alternative near the grid connection. After 60 years the solar land would be restored so it could return to farming.</p>
+          <p><span class="lbl">Points to raise</span>The data centre, Western substation and batteries, Walpole substation and Western overhead line are treated as permanent development, so no return to farming is proposed for that land. Ask for the field-survey results, the area of each grade under permanent and under temporary development, and evidence that poorer land was considered. National food security is also in scope: the developer has said it will assess it.</p>
+          <p class="src">Scoping Report §14.4.5–14.4.6, §4.5.4, §5.6.4 (KL&amp;WN Local Plan Policy LP24); draft Data Centres NPS paras 362 and 379</p></div></details>
+        <details class="ground"><summary><b>Site chosen because the land was available (land ownership)</b><span class="await-chip">Subject to clarification</span></summary><div class="gbody">
+          <p><span class="lbl">The issue</span><b>The published documents do not say who owns the land.</b> It has been suggested locally that much of it may be in a single ownership. This has not been confirmed and should not be relied on.</p>
+          <p><span class="lbl">What the documents say</span>Site selection was influenced by grid capacity at Walpole, "availability of suitable land", distance from population centres and access to A-roads. The developer says it is holding "landowner discussions" and refers to "landowners" in the plural.</p>
+          <p><span class="lbl">Developer's position</span>Alternative locations, routes and designs, and the reasons for its choices, will be set out in the Environmental Statement.</p>
+          <p><span class="lbl">Points to raise</span>Who owns land is not normally a planning reason in itself. The useful argument is about <b>alternatives</b>: if the site was picked because the land was easy to get rather than because it is the best place, the developer should show what other sites were assessed. If the application seeks compulsory acquisition powers, it must include Land Plans and a Book of Reference listing the owners and other interests in the land. In the meantime, you can ask the developer to confirm the position.</p>
+          <p class="src">Scoping Report §2.4.3, §16.6.5; local suggestion (unverified)</p></div></details>
+        <details class="ground"><summary><b>Data centre added to an energy project</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
+          <p><span class="lbl">The issue</span>A data centre is not automatically a nationally significant project. It can enter this process only through a direction from the Secretary of State under Section 35 of the Planning Act 2008, so that it can be decided in the same application as the solar farm.</p>
+          <p><span class="lbl">What the documents say</span>The developer has submitted a request for a Section 35 direction for the data centre campus. The draft policy says data centres of at least 100&nbsp;MW of IT load are likely to be considered suitable for direction. That policy is still a draft: its consultation closes 8 January 2027 and Parliament's scrutiny runs to 17 February 2027.</p>
+          <p><span class="lbl">Developer's position</span>Co-locating the campus means solar power reaches it at low cost, which reduces demand on the grid.</p>
+          <p><span class="lbl">Points to raise</span>Whether a 1&nbsp;GW hyperscale data centre on farmland should be decided together with a solar scheme, and under a policy that has not yet been finalised. Make this point in <b>both</b> consultations (see the Respond tab).</p>
+          <p class="src">Scoping Report §1.4.5; draft Data Centres NPS paras 24–25 and 39; Leaflet p12</p></div></details>
+        <details class="ground"><summary><b>Scale and permanence of the data centre</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
+          <p><span class="lbl">The issue</span>This is a hyperscale campus of about 1&nbsp;GW: up to 10 buildings up to 25&nbsp;m tall (including rooftop plant) on up to 70&nbsp;ha, built in phases over about 10 years from 2029.</p>
+          <p><span class="lbl">What the documents say</span>The data centre is treated as <b>permanent</b>, together with the Western substation, batteries and the Western overhead line. If the data centre doesn't go ahead, the area would be used for more solar.</p>
+          <p><span class="lbl">Developer's position</span>It sits at least 300&nbsp;m from homes and will be screened by landscaping.</p>
+          <p><span class="lbl">Points to raise</span>Its height and bulk in a flat, open Fen landscape; a construction period of about 10 years; continuous operation; and whether a 300&nbsp;m separation is enough for buildings of this size.</p>
+          <p class="src">Scoping Report §4.4.35–4.4.45, §4.5.4, §4.6.3; Leaflet p17, p20</p></div></details>
+        <details class="ground"><summary><b>Flood risk on the Western Site</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
+          <p><span class="lbl">The issue</span>Most of the Western Site, where the data centre is proposed, is in the Environment Agency's highest tidal flood zone.</p>
+          <p><span class="lbl">What the documents say</span>Most of the Western Site is in Flood Zone&nbsp;3 (tidal), with a small area of Zone&nbsp;2 at its southern end and one area of Zone&nbsp;1 near its centre. The Western Cable Route is entirely in Zones 2 and 3, and the Walpole land almost entirely. The draft data centre policy says the Secretary of State must be satisfied that the Sequential and Exception Tests have been applied where required.</p>
+          <p><span class="lbl">Developer's position</span>Flood risk will be assessed with the Environment Agency, the Lead Local Flood Authority and the Internal Drainage Boards.</p>
+          <p><span class="lbl">Points to raise</span>Exactly where the data centre buildings sit in relation to the flood zones (including the Zone&nbsp;1 area), how the Sequential Test has been applied, and how the buildings would stay safe over their lifetime.</p>
+          <p class="src">Scoping Report §13.4.52; draft Data Centres NPS para 312</p></div></details>
+        <details class="ground"><summary><b>Landscape and new overhead lines</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
+          <p><span class="lbl">The issue</span>About 14&nbsp;km of new overhead line: about 7&nbsp;km on towers up to 50&nbsp;m, and about 7&nbsp;km on towers up to 35&nbsp;m. Add about 1,400&nbsp;ha of solar areas (measured from the layout plan) with panels up to 4.5&nbsp;m high, fencing and CCTV poles.</p>
+          <p><span class="lbl">What the documents say</span>The visibility study (ZTV) used towers of 50&nbsp;m and 35&nbsp;m and a 25&nbsp;m data centre. The Western line would run between existing overhead lines. The Eastern line runs south of the existing Walpole–Norwich line.</p>
+          <p><span class="lbl">Developer's position</span>Grouping the new line with existing lines limits new effects. Sensitive heritage areas would be crossed underground.</p>
+          <p><span class="lbl">Points to raise</span>Ask for photomontages from your own viewpoints, and for the underground option to be considered for longer stretches.</p>
+          <p class="src">Scoping Report §4.4.47–4.4.52, §10.3</p></div></details>
+        <details class="ground"><summary><b>Heritage settings</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
+          <p><span class="lbl">The issue</span>The scheme is close to designated heritage assets.</p>
+          <p><span class="lbl">What the documents say</span>Stradsett Hall Registered Park and Garden (Grade&nbsp;II) is about 0.1&nbsp;km west of the site. The underground cable section is intended to avoid it and the Grade&nbsp;I Church of St Botolph. The developer expects 11 scheduled monuments, 9 Grade&nbsp;I and 11 Grade&nbsp;II* listed buildings, Fincham Conservation Area and Stradsett Hall park to go forward for detailed assessment. Scheduled monuments near the site include the bowl barrow known as The Mound, about 200&nbsp;m south of it.</p>
+          <p><span class="lbl">Developer's position</span>There are no designated assets within the site. Underground cabling, setbacks and screening reduce effects on their settings.</p>
+          <p><span class="lbl">Points to raise</span>Effects on the setting of these assets, and on undesignated heritage and archaeology. An archaeology strategy is promised.</p>
+          <p class="src">Scoping Report §4.4.48, §10.3.13, §11.6.23; Leaflet p9, p19</p></div></details>
+        <details class="ground"><summary><b>Wildlife: Islington Heronry SSSI</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
+          <p><span class="lbl">The issue</span>A Site of Special Scientific Interest lies <b>inside</b> the Western Site boundary.</p>
+          <p><span class="lbl">What the documents say</span>Islington Heronry SSSI is within the site, with a minimum 100&nbsp;m buffer to above-ground infrastructure.</p>
+          <p><span class="lbl">Developer's position</span>There will be no direct loss of the SSSI, and the scheme will seek to deliver a significant biodiversity net gain.</p>
+          <p><span class="lbl">Points to raise</span>Whether a 100&nbsp;m buffer is enough to protect the heronry from construction disturbance, operational noise and lighting.</p>
+          <p class="src">Scoping Report §4.2.1, §9.6.7, §10.3.17; Leaflet p10</p></div></details>
+        <details class="ground"><summary><b>Noise, lighting and air quality</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
+          <p><span class="lbl">The issue</span>Data centres operate continuously and include cooling infrastructure, backup generators and security lighting.</p>
+          <p><span class="lbl">What the documents say</span>Backup generators will be assessed as diesel, the worst case. The data centre will need extra CCTV, security and external lighting. High-voltage areas, including substations and batteries, will have lighting but will not be permanently lit.</p>
+          <p><span class="lbl">Developer's position</span>The remote location and distance from homes limit effects. Generators run only for emergencies and testing.</p>
+          <p><span class="lbl">Points to raise</span>Ask for night-time noise limits at named homes, generator testing hours, and lighting levels, especially across flat open land where light travels far.</p>
+          <p class="src">Scoping Report §4.4.38–4.4.39, §4.4.53–4.4.54; Leaflet p17, p20</p></div></details>
+        <details class="ground"><summary><b>Traffic and construction</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
+          <p><span class="lbl">The issue</span>Construction is expected to start in 2029, with the solar operating by 2032. The data centre would be built in phases over about 10 years, to around 2039. New site accesses would be created.</p>
+          <p><span class="lbl">What the documents say</span>HGV routes will avoid Tilney St Lawrence, Barton Bendish and Fincham "where possible". Construction routes and access points are still being developed.</p>
+          <p><span class="lbl">Developer's position</span>An outline Construction Traffic Management Plan will be included in the application.</p>
+          <p><span class="lbl">Points to raise</span>Ask for firm commitments on routes and hours, not "where possible". Raise specific junctions, lanes and school routes.</p>
+          <p class="src">Scoping Report §4.2.1, §4.6; Leaflet p4, p20</p></div></details>
+        <details class="ground"><summary><b>Battery fire safety</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
+          <p><span class="lbl">The issue</span>Battery storage is planned at both the Eastern and Western Sites.</p>
+          <p><span class="lbl">What the documents say</span>They will comply with National Fire Chiefs Council guidance on spacing, emergency access and water supply. Capacity is not yet published.</p>
+          <p><span class="lbl">Developer's position</span>Batteries let the scheme store solar power and support the grid.</p>
+          <p><span class="lbl">Points to raise</span>Ask for capacity in MWh, distances to homes and watercourses, fire-water containment, and Norfolk Fire &amp; Rescue's views.</p>
+          <p class="src">Scoping Report §4.4.28–4.4.33</p></div></details>
+        <details class="ground"><summary><b>How much power the data centre actually takes from solar</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
+          <p><span class="lbl">The issue</span>Solar panels generate nothing at night and less in winter, while a data centre operates continuously.</p>
+          <p><span class="lbl">What the documents say</span>The scheme would provide up to 1.3–1.4&nbsp;GW of electricity, and the data centre's capacity is about 1&nbsp;GW. The Western substation will allow electricity to be imported from the grid where required, for the data centre and battery storage.</p>
+          <p><span class="lbl">Developer's position</span>Co-location reduces the electricity the data centre needs from the grid, and nearby offshore wind adds supply.</p>
+          <p><span class="lbl">Points to raise</span>Ask for an hour-by-hour or annual energy balance showing how much of the data centre's use is met by on-site solar and how much comes from the grid.</p>
+          <p class="src">Scoping Report §1.1.2, §4.4.23, §4.4.35; Leaflet p12, p14, p17, p20</p></div></details>
+        <details class="ground"><summary><b>Distance from homes</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
+          <p><span class="lbl">The issue</span>Whether the minimum distances between the scheme and homes are enough.</p>
+          <p><span class="lbl">What the documents say</span>The developer's minimum distances are 30&nbsp;m from homes and other sensitive buildings to panels, 100&nbsp;m to inverters and transformers, and 300&nbsp;m to the data centre, substations and battery storage.</p>
+          <p><span class="lbl">Developer's position</span>Site-specific screening and planting will be agreed with the nearest residents.</p>
+          <p><span class="lbl">Points to raise</span>Use the Near me tab to find your own distances, and ask for larger buffers where you live.</p>
+          <p class="src">Scoping Report §4.2.1</p></div></details>
+        <details class="ground"><summary><b>Cumulative effects and community benefit</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
+          <p><span class="lbl">The issue</span>Several other energy projects are coming forward around Walpole, and the community benefits are not yet defined.</p>
+          <p><span class="lbl">What the documents say</span>The developer notes "a number of projects" in development or construction near Walpole substation. A community benefit fund is proposed, but no amount has been given. The draft data centre policy says strategic data centres should agree a Local Benefit Plan, developed with the local community and linked to the development's size.</p>
+          <p><span class="lbl">Developer's position</span>Near Walpole, the scheme's impact is limited to an underground cable close to the existing substation and an overhead line within the corridor of the existing lines.</p>
+          <p><span class="lbl">Points to raise</span>Ask for a list of the projects included in the cumulative assessment, and for figures on community benefit.</p>
+          <p class="src">Leaflet p19; Scoping Report §4.2.2; draft Data Centres NPS (Foreword, Local Benefit Plan)</p></div></details>
+      <p class="src">Section numbers refer to the EIA Scoping Report (Oct 2026) unless stated. Links are in the Documents tab.</p>
+    </section>
+
+    <section data-panel="respond" hidden>
+      <p>There are two separate consultations. One is about this scheme. The other is about national planning policy for all large data centres, which would be used when deciding schemes like this one. They are run by different organisations, so respond to each separately.</p>
+
+      <div class="card">
+        <div class="eyebrow">This scheme · run by the developer</div>
+        <h3>Longmarsh Green Energy consultation</h3>
+        <div class="deadline">Closes 11.59pm, Thursday 26 November 2026</div>
+        <p>EPL Norfolk Limited's pre-application consultation. It covers the layout, access, construction routes, screening, biodiversity and community benefits. The developer says feedback will help refine its proposals before it submits its application to the Planning Inspectorate (expected April 2027).</p>
+        <dl class="ways">
+          <dt>Post</dt><dd><div class="addr" id="a-lm">Freepost LONGMARSH GREEN ENERGY</div><small>No stamp or further address needed.</small></dd>
+          <dt>Email</dt><dd><span style="user-select:all">info@longmarshgreenenergy.co.uk</span></dd>
+          <dt>Online</dt><dd><a href="https://longmarshgreenenergy.co.uk/feedback" target="_blank" rel="noopener">longmarshgreenenergy.co.uk/feedback</a></dd>
+          <dt>Form</dt><dd><a href="https://longmarshgreenenergy.co.uk/wp-content/uploads/2026/09/longmarsh-green-consultation-feedback-form.pdf" target="_blank" rel="noopener">Printable feedback form (PDF)</a></dd>
+          <dt>Phone</dt><dd><span style="user-select:all">0800 246 1782</span></dd>
+        </dl>
+        <button class="btn copy" data-copy="a-lm">Copy address</button>
+      </div>
+
+      <div class="card">
+        <div class="eyebrow">This scheme · the decision-maker</div>
+        <h3>Planning Inspectorate (EN0110048)</h3>
+        <div class="deadline">Formal comments open after the application is accepted</div>
+        <p>The project is at pre-application stage, so the Inspectorate isn't taking representations yet. Once the application is submitted and accepted, you can register as an interested party and comment during the examination. Until then, sign up for updates.</p>
+        <dl class="ways">
+          <dt>Updates</dt><dd><a href="https://national-infrastructure-consenting.planninginspectorate.gov.uk/projects/EN0110048/get-updates/start" target="_blank" rel="noopener">Get email updates on EN0110048</a></dd>
+          <dt>Email</dt><dd><span style="user-select:all">longmarshgreenenergy@planninginspectorate.gov.uk</span><br><small>Put "Longmarsh Green Energy" in the subject line.</small></dd>
+          <dt>Phone</dt><dd><span style="user-select:all">0303 444 5000</span> <small>(Mon–Fri, 9am–4pm)</small></dd>
+          <dt>Guide</dt><dd><a href="https://national-infrastructure-consenting.planninginspectorate.gov.uk/having-your-say-guide" target="_blank" rel="noopener">Have your say about a national infrastructure project</a></dd>
+        </dl>
+      </div>
+
+      <div class="card">
+        <div class="eyebrow">National policy · run by government</div>
+        <h3>Draft National Policy Statement for Data Centres</h3>
+        <div class="deadline">Closes 11.59pm, Friday 8 January 2027</div>
+        <p>The Department for Business, Innovation, Science and Trade is consulting on the policy that the Planning Inspectorate and the Secretary of State would use to judge large data centre applications. The government particularly wants to hear from local communities where data centres are being considered. Say whether you're responding as an individual or for an organisation.</p>
+        <dl class="ways">
+          <dt>Online</dt><dd><a href="https://www.smartsurvey.co.uk/t/NPSConsultation2026/" target="_blank" rel="noopener">Respond online (preferred)</a></dd>
+          <dt>Email</dt><dd><span style="user-select:all">datacentrenps@dsit.gov.uk</span></dd>
+          <dt>Post</dt><dd><div class="addr" id="a-nps">Data Centre Growth Policy Team
+Department for Business, Innovation, Science and Trade
+2nd Floor
+22 Whitehall
+London
+SW1A 2EG</div></dd>
+          <dt>Formats</dt><dd>For a paper copy, braille or large print, email <span style="user-select:all">digital@businessandtrade.gov.uk</span></dd>
+        </dl>
+        <button class="btn copy" data-copy="a-nps">Copy address</button>
+        <p class="src">Parliament's scrutiny period for the draft runs from 28 October 2026 to 17 February 2027 (draft NPS, para 39).</p>
+      </div>
+
+      <h2>Writing a useful letter</h2>
+      <ul class="plain">
+        <li>Put the project name and reference at the top: <b>Longmarsh Green Energy (EN0110048)</b>.</li>
+        <li>Give your name and postcode so your comments can be linked to a place.</li>
+        <li>Be specific about where. The <b>Near me</b> tab gives your distance to each part of the scheme.</li>
+        <li>Say which element you mean (panels, data centre, overhead line, traffic, a footpath), what effect you expect, and what change you'd like.</li>
+        <li>For the national policy consultation, answer its questions directly. That is the format the government says is most useful.</li>
+      </ul>
+      <p class="src">Sources: consultation leaflet p21–22; Planning Inspectorate project page; GOV.UK consultation page (checked 29 Oct 2026).</p>
+    </section>
+
+    <section data-panel="docs" hidden>
+      <p>Official documents, all hosted online by their publishers. Large files are marked.</p>
+      <h2>From the developer</h2>
+      <div class="doclist">
+        <a class="doc" href="https://longmarshgreenenergy.co.uk/wp-content/uploads/2026/09/longmarsh-green-community-consultation-leaflet.pdf" target="_blank" rel="noopener"><b>Community Consultation Leaflet</b><span>PDF · 8 MB</span><small>Overview, maps, design commitments, how to respond.</small></a>
+        <a class="doc" href="https://longmarshgreenenergy.co.uk/wp-content/uploads/2026/09/longmarsh-green-consultation-feedback-form.pdf" target="_blank" rel="noopener"><b>Consultation Feedback Form</b><span>PDF · 2.5 MB</span><small>The questions, for posting back by Freepost.</small></a>
+        <a class="doc" href="https://longmarshgreenenergy.co.uk/wp-content/uploads/2026/10/longmarsh-green-programme-document.pdf" target="_blank" rel="noopener"><b>Programme Document</b><span>PDF · 1 MB</span><small>Pre-application timetable, main issues and risks.</small></a>
+        <a class="doc" href="https://longmarshgreenenergy.co.uk/documents" target="_blank" rel="noopener"><b>All documents on the project website</b><span>web</span><small>Check here for anything newly published.</small></a>
+      </div>
+      <h2>Planning Inspectorate (EN0110048)</h2>
+      <div class="doclist">
+        <a class="doc" href="https://national-infrastructure-consenting.planninginspectorate.gov.uk/projects/EN0110048" target="_blank" rel="noopener"><b>Project page</b><span>web</span><small>Stage, timetable and contacts.</small></a>
+        <a class="doc" href="https://national-infrastructure-consenting.planninginspectorate.gov.uk/projects/EN0110048/documents" target="_blank" rel="noopener"><b>Project documents library</b><span>web</span><small>The Scoping Opinion (expected November 2026) will be published here.</small></a>
+        <a class="doc" href="https://nsip-documents.planninginspectorate.gov.uk/published-documents/EN0110048-000007-Longmarsh%20Green%20Energy%20-%20Scoping%20Report%20for%20Submission.pdf" target="_blank" rel="noopener"><b>EIA Scoping Report – main text</b><span>PDF · 3 MB</span><small>Project description (ch. 4), heights, and how each topic will be assessed.</small></a>
+        <a class="doc" href="https://nsip-documents.planninginspectorate.gov.uk/published-documents/EN0110048-000008-Appendix%20A%20-%20Figures_Part1.pdf" target="_blank" rel="noopener"><b>Scoping Report Appendix A – Figures Part 1</b><span>PDF · 51 MB</span><small>Site location, areas, layout plan (Fig. 1-3, used for this map), visibility (ZTV) maps.</small></a>
+        <a class="doc" href="https://nsip-documents.planninginspectorate.gov.uk/published-documents/EN0110048-000004-Appendix%20A%20-%20Figures_Part2.pdf" target="_blank" rel="noopener"><b>Scoping Report Appendix A – Figures Part 2</b><span>PDF · 38 MB</span><small>Heritage, agricultural land, flood risk and study-area figures.</small></a>
+        <a class="doc" href="https://nsip-documents.planninginspectorate.gov.uk/published-documents/EN0110048-000005-Appendix%20B%20to%20E_Redacted.pdf" target="_blank" rel="noopener"><b>Scoping Report Appendices B–E</b><span>PDF · 32 MB</span><small>Commitments register, ES structure, built heritage assets, desk studies.</small></a>
+        <a class="doc" href="https://national-infrastructure-consenting.planninginspectorate.gov.uk/projects/EN0110048/download-boundary" target="_blank" rel="noopener"><b>Official site boundary (GeoJSON)</b><span>JSON</span><small>The order limits shown on this map as the red boundary.</small></a>
+        <a class="doc" href="https://national-infrastructure-consenting.planninginspectorate.gov.uk/decision-making-process-guide" target="_blank" rel="noopener"><b>How the NSIP process works</b><span>web</span><small>The Planning Inspectorate's guide to each stage.</small></a>
+      </div>
+      <h2>National data centre policy</h2>
+      <div class="doclist">
+        <a class="doc" href="https://www.gov.uk/government/consultations/draft-national-policy-statement-for-data-centres" target="_blank" rel="noopener"><b>Draft NPS for Data Centres – consultation page</b><span>web</span><small>Closes 8 January 2027. How to respond.</small></a>
+        <a class="doc" href="https://gov.uk/government/publications/draft-national-policy-statement-for-data-centres" target="_blank" rel="noopener"><b>Draft National Policy Statement for Data Centres</b><span>web</span><small>The draft policy document (October 2026).</small></a>
+      </div>
+    </section>
+    <section data-panel="facts" hidden>
+      <div class="facts">
+        <div class="fact"><b>1,980 ha</b><span>Total site, inc. cable routes</span></div>
+        <div class="fact"><b>1.3–1.4 GW</b><span>Scheme output (up to)</span></div>
+        <div class="fact"><b>~1 GW</b><span>Hyperscale data centre campus</span></div>
+        <div class="fact"><b>Up to 10</b><span>Data centre buildings, max 25 m</span></div>
+        <div class="fact"><b>70 ha</b><span>Max data centre footprint</span></div>
+        <div class="fact"><b>60 years</b><span>Solar operating life</span></div>
+      </div>
+      <p class="src">Scoping Report §1.1.2, §3.2.1, §4.4.35–4.4.38, §4.6.2</p>
+      <h2>Maximum heights</h2>
+      <dl class="dl">
+        <dt>Solar panels (fixed or tracker)</dt><dd>4.5 m</dd>
+        <dt>Data centre, 400 kV substation, BESS (West)</dt><dd>25 m</dd>
+        <dt>Substation &amp; BESS (East)</dt><dd>8 m</dd>
+        <dt>Walpole substation works</dt><dd>8 m</dd>
+        <dt>Western Cable Route towers (~7 km)</dt><dd>50 m</dd>
+        <dt>Eastern Cable Route towers (~7 km)</dt><dd>35 m</dd>
+        <dt>Security fencing / CCTV poles</dt><dd>2.5–3 / 5 m</dd>
+      </dl>
+      <p class="src">§4.4.6, §4.4.22–4.4.23, §4.4.38, §4.4.47–4.4.48, §4.4.51–4.4.52; Walpole height from ZTV parameters §11.4.6</p>
+      <h2>Design commitments</h2>
+      <ul class="plain">
+        <li>Panels at least 30 m from homes and other sensitive buildings.</li>
+        <li>Inverters and transformers at least 100 m away.</li>
+        <li>Data centre, substations and battery storage at least 300 m away.</li>
+        <li>No overhead line tower within 100 m of a home.</li>
+        <li>100 m buffer from Islington Heronry SSSI.</li>
+        <li>Construction HGVs routed away from Tilney St Lawrence, Barton Bendish and Fincham where possible.</li>
+      </ul>
+      <p class="src">§4.2.1, §4.4.50</p>
+      <h2>Timeline</h2>
+      <div class="tl">
+        <b>15 Oct–26 Nov 2026</b><span>Community consultation</span>
+        <b>Apr 2027</b><span>DCO application to the Planning Inspectorate</span>
+        <b>Sep 2027–Mar 2028</b><span>Examination (about 6 months)</span>
+        <b>Jul–Sep 2028</b><span>Secretary of State decision</span>
+        <b>2029</b><span>Construction starts</span>
+        <b>2032</b><span>Solar, batteries and data centre phase 1 operating</span>
+        <b>c. 2039</b><span>Data centre fully built (about 10 years from 2029, 2 halls per phase)</span>
+      </div>
+      <p class="src">Leaflet p5, p20; §4.6</p>
+      <h2>After 60 years</h2>
+      <p>The Eastern Site and all Western solar are removed. The data centre, Western substation and batteries, Walpole substation and the Western overhead line are treated as permanent.</p>
+      <p class="src">§4.5.1–4.5.4</p>
+      <h2>Have your say</h2>
+      <p>The scheme consultation closes 26 November 2026, and the national data centre policy consultation closes 8 January 2027. Addresses and links are in the <b>Respond</b> tab.</p>
+      <h2>Disclaimer</h2>
+      <p><b>An independent, unofficial guide.</b> This viewer was made to help people find and understand public information about the proposed Longmarsh Green Energy scheme. It is not produced or endorsed by EPL Norfolk Limited, Evolution Power, the Planning Inspectorate, the government, or any council.</p>
+      <p><b>Compiled quickly from new documents.</b> The information comes from documents published in October 2026, early in the consultation, and was put together in a short time. It may contain errors or omissions, and the scheme and documents will change. Sources were last checked on 29 October 2026.</p>
+      <ul class="plain">
+        <li>Map shapes are traced from the developer's indicative plans and are approximate. Anything marked <b>awaiting information</b> is a presumption made for this viewer, not part of the proposals.</li>
+        <li>Distances are approximate straight-line measurements. Do not rely on them for property, legal or financial decisions.</li>
+        <li>The Objections and Respond tabs summarise published documents and policy to help people take part. They are not legal, planning or other professional advice, and they do not represent the views of any organisation.</li>
+      </ul>
+      <p><b>Please check everything against the original documents</b> (linked in the Documents tab) before you rely on it or quote it, and seek professional advice about your own circumstances. To the extent permitted by law, no responsibility is accepted for any loss, or any decision made, as a result of using this viewer.</p>
+      <h2>About this map</h2>
+      <p class="note">This is an independent visualisation, not produced by the applicant. The published shapes were extracted from the vector layers of Scoping Report Appendix A, Figure 1-3 (Layout Plan, rev 01, 13/10/2026). They were placed on the map using the Ordnance Survey 1 km grid printed on the figures. Two figures placed separately agree to within 2.5 m, and the shapes follow field edges and the existing Walpole substation on aerial imagery. The applicant calls the boundary indicative.</p>
+    </section>
+  </div>
+</aside>
+<div class="toast" id="toast" hidden></div>
+<div class="modal" id="disc" role="dialog" aria-modal="true" aria-labelledby="discT" hidden>
+  <div class="box">
+    <h2 id="discT">Before you use this map</h2>
+    <p><b>An independent, unofficial guide.</b> This viewer was made to help people find and understand public information about the proposed Longmarsh Green Energy scheme. It is not produced or endorsed by EPL Norfolk Limited, Evolution Power, the Planning Inspectorate, the government, or any council.</p>
+      <p><b>Compiled quickly from new documents.</b> The information comes from documents published in October 2026, early in the consultation, and was put together in a short time. It may contain errors or omissions, and the scheme and documents will change. Sources were last checked on 29 October 2026.</p>
+      <ul class="plain">
+        <li>Map shapes are traced from the developer's indicative plans and are approximate. Anything marked <b>awaiting information</b> is a presumption made for this viewer, not part of the proposals.</li>
+        <li>Distances are approximate straight-line measurements. Do not rely on them for property, legal or financial decisions.</li>
+        <li>The Objections and Respond tabs summarise published documents and policy to help people take part. They are not legal, planning or other professional advice, and they do not represent the views of any organisation.</li>
+      </ul>
+      <p><b>Please check everything against the original documents</b> (linked in the Documents tab) before you rely on it or quote it, and seek professional advice about your own circumstances. To the extent permitted by law, no responsibility is accepted for any loss, or any decision made, as a result of using this viewer.</p>
+    <div class="btnrow"><button class="btn primary" id="discOk">I understand</button></div>
+  </div>
+</div>
+
+<script>
+/* status: 'pub' = published by the applicant (shape + parameter); 'await' = presumption awaiting information */
+const LAYERS=[
+ {k:'solar',status:'pub',name:'Solar panel & battery area',h:'≤4.5 m',col:'#f5c518',
+   src:'Fig. 1-3 Layout Plan ("Solar PV Panels – Height 4.5m"); §4.4.6',
+   known:'Area where panels and some battery storage will go. Panels up to 4.5 m high, at least 30 m from homes.',
+   awaiting:'Rows, tracks, inverters and buffers inside the area are not yet laid out.'},
+ {k:'datacentre_west',status:'pub',name:'Data centre, 400 kV substation & batteries zone',h:'≤25 m',col:'#ff7b00',
+   src:'Fig. 1-3 ("Substation, BESS & Data Centre (West) – Height 25m"); §4.4.23, §4.4.37–4.4.38',
+   known:'Zone for a ~1 GW hyperscale campus: up to 10 buildings, max 25 m, max 70 ha footprint, plus the 400 kV substation and batteries.',
+   awaiting:'Building positions, shapes and heights within the zone.'},
+ {k:'substation_bess_east',status:'pub',name:'Eastern substation & batteries zone',h:'≤8 m',col:'#d646c4',
+   src:'Fig. 1-3 ("Substation & BESS (East) – Height 8m"); §4.4.22',
+   known:'33/132 kV substation with co-located batteries, max 8 m.',awaiting:'Equipment layout and battery capacity.'},
+ {k:'walpole_substation',status:'pub',name:'Walpole substation works area',h:'≤8 m',col:'#f3b8ef',
+   src:'Fig. 1-3 ("Walpole Substation – Height 8m"); §3.2.6–3.2.7 (≈43 ha)',
+   known:'Area next to the existing National Grid Walpole substation for the new connection and 400 kV bay.',
+   awaiting:'Boundary to be refined once the exact connection point is confirmed.'},
+ {k:'ohl_50',status:'pub',name:'Overhead line corridor, West (towers ≤50 m)',h:'corridor',col:'#9485ed',
+   src:'Fig. 1-3 ("Overhead Connection Infrastructure – Height 50m"); §4.4.47',
+   known:'About 7 km of overhead line on metal towers up to 50 m, between the existing 400 kV and 132 kV lines.',awaiting:'Tower positions.'},
+ {k:'ohl_35',status:'pub',name:'Overhead line corridor, East (towers ≤35 m)',h:'corridor',col:'#70bfeb',
+   src:'Fig. 1-3 ("Overhead Connection Infrastructure – Height 35m"); §4.4.48',
+   known:'About 7 km of overhead line on metal towers up to 35 m, south of the existing Walpole–Norwich line.',awaiting:'Tower positions.'},
+ {k:'cable_buried',status:'pub',name:'Underground cable corridor',h:'ground',col:'#2b4cff',
+   src:'Fig. 1-3 ("Cable Route – Buried – Height 0m"); §4.4.48–4.4.49',
+   known:'Buried cable, trench up to 15 m wide and 3 m deep, 50 m temporary working width.',awaiting:'Exact trench line within the corridor.'},
+ {k:'biodiversity',status:'pub',name:'Biodiversity area',h:'ground',col:'#0b6e1a',src:'Fig. 1-3 ("Biodiversity Area")',known:'Area set aside for habitat.',awaiting:'Planting and habitat plans.'},
+ {k:'access_track',status:'pub',name:'Access track',h:'ground',col:'#333333',src:'Fig. 1-3 ("Access Track")',known:'Published access track.',awaiting:'Other site entrances and construction routes.'},
+ {k:'boundary',status:'pub',name:'Site boundary (official order limits)',h:'',col:'#e3191c',line:true,src:'Planning Inspectorate boundary file EN0110048 ("LMG Order Limits – 22-09-26"), 1,979 ha',known:'Land the applicant expects to need, as lodged with the Planning Inspectorate.',awaiting:'The applicant says the boundary is indicative and may be refined, e.g. near Walpole.'},
+ {k:'envelope',status:'await',name:'Height envelopes (each zone raised to its maximum; solar shown in grey)',h:'4.5–25 m',col:'#c27c0e',hatch:true,
+   src:'Presumption based on max heights in §4.4',known:'Maximum heights are published.',awaiting:'Real buildings and panels will cover only part of each zone.'},
+ {k:'tower',status:'await',name:'Overhead line towers',h:'35–50 m',col:'#c27c0e',hatch:true,
+   src:'Presumption: evenly spaced along the corridor centre',known:'Corridor and maximum tower height are published.',awaiting:'Tower count and positions.'},
+ {k:'ohl_line',status:'await',name:'Overhead line route (corridor centre)',h:'',col:'#c27c0e',line:true,dash:true,
+   src:'Presumption: centre line of the published 100 m corridor',known:'Corridor is published.',awaiting:'Exact alignment within the corridor.'},
+ {k:'buffer300',status:'await',name:'300 m line from zone edges',h:'',col:'#c27c0e',line:true,dash:true,
+   src:'Derived from commitment §4.2.1',known:'Major infrastructure will be ≥300 m from homes.',awaiting:'Measured from zone edges because the buildings have not been placed.'}
+];
+const EXT=['solar','datacentre_west','substation_bess_east','walpole_substation'];
+const EXT_ENV=EXT.filter(k=>k!=='solar');
+const FLAT=['solar','datacentre_west','substation_bess_east','walpole_substation','cable_buried','biodiversity','access_track','ohl_50','ohl_35'];
+const VIEWS={
+ all:{center:[0.395,52.672],zoom:10.6,pitch:0,bearing:0},
+ west:{center:[0.312,52.718],zoom:13.6,pitch:60,bearing:-20},
+ east:{center:[0.505,52.625],zoom:12.8,pitch:55,bearing:15},
+ walpole:{center:[0.197,52.728],zoom:14.6,pitch:55,bearing:-30}
+};
+const $=s=>document.querySelector(s);
+const toast=t=>{const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,3500)};
+const esc=s=>String(s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+let DATA=null, VILL=[], is3D=true;
+
+const style={version:8,
+ glyphs:'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+ sky:{'sky-color':'#b9cfe3','horizon-color':'#e6ecef','fog-color':'#e6ecef','sky-horizon-blend':0.5,'horizon-fog-blend':0.7,'fog-ground-blend':0.85,'atmosphere-blend':0},
+ sources:{
+  osm:{type:'raster',tileSize:256,maxzoom:19,tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],attribution:'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'},
+  sat:{type:'raster',tileSize:256,maxzoom:19,tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],attribution:'Imagery © Esri, Maxar, Earthstar Geographics'}
+ },
+ layers:[{id:'bg',type:'background',paint:{'background-color':'#e8e6df'}},
+  {id:'osm',type:'raster',source:'osm'},
+  {id:'sat',type:'raster',source:'sat',layout:{visibility:'none'}}]
+};
+const map=new maplibregl.Map({container:'map',style,center:[0.395,52.672],zoom:10.6,maxPitch:85,
+  attributionControl:{compact:true,customAttribution:'Scheme layers: Longmarsh Green Energy Scoping Report Fig. 1-3 (Oct 2026)'}});
+map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'bottom-right');
+map.addControl(new maplibregl.ScaleControl({unit:'metric'}),'bottom-right');
+
+function pvImage(){
+  // three table rows per 32 px tile: navy modules, silver frames, pale ground between rows
+  const s=32,c=document.createElement('canvas');c.width=c.height=s;const x=c.getContext('2d');
+  x.fillStyle='#e6e0cc';x.fillRect(0,0,s,s);
+  for(let r=0;r<3;r++){const y0=r*(s/3), h=7;
+    const g=x.createLinearGradient(0,y0,0,y0+h);g.addColorStop(0,'#46679c');g.addColorStop(1,'#14223f');
+    x.fillStyle=g;x.fillRect(0,y0+0.5,s,h);
+    x.fillStyle='rgba(210,222,240,.6)';for(let i=0;i<s;i+=4)x.fillRect(i,y0+0.5,0.6,h);
+    x.fillStyle='#c9d0d9';x.fillRect(0,y0+0.5+h,s,0.8);}
+  const d=x.getImageData(0,0,s,s);return {width:s,height:s,data:new Uint8Array(d.data.buffer)};
+}
+function hatchImage(hex){
+  const s=16,c=document.createElement('canvas');c.width=c.height=s;const x=c.getContext('2d');
+  x.fillStyle=hex;x.globalAlpha=0.55;x.fillRect(0,0,s,s);x.globalAlpha=1;
+  x.strokeStyle='#c27c0e';x.lineWidth=3;
+  for(let i=-s;i<=s*2;i+=8){x.beginPath();x.moveTo(i,0);x.lineTo(i-s,s);x.stroke()}
+  const d=x.getImageData(0,0,s,s);return {width:s,height:s,data:new Uint8Array(d.data.buffer)};
+}
+
+async function loadData(){
+  if(window.LM_DATA&&window.LM_VILL)return [window.LM_DATA,window.LM_VILL];
+  return Promise.all([fetch('data/longmarsh.geojson').then(r=>r.json()),fetch('data/villages.json').then(r=>r.json())]);
+}
+
+map.on('load',async()=>{
+  try{[DATA,VILL]=await loadData()}catch(e){toast('Could not load the map data. Check the data folder sits next to index.html.');return}
+  for(const k of EXT){const L=LAYERS.find(l=>l.k===k);map.addImage('hatch-'+k,k==='solar'?pvImage():hatchImage(L.col))}
+  map.addImage('hatch-tower',hatchImage('#8a7ff2'));
+  map.addSource('lm',{type:'geojson',data:DATA});
+  // published footprints: flat, solid
+  map.addLayer({id:'flat',type:'fill',source:'lm',filter:['in',['get','kind'],['literal',FLAT]],paint:{'fill-color':['get','color'],'fill-opacity':['match',['get','kind'],'solar',0.25,0.6]}});
+  map.addLayer({id:'flat-edge',type:'line',source:'lm',filter:['in',['get','kind'],['literal',FLAT]],paint:{'line-color':['get','color'],'line-width':1}});
+  // presumptions: hatched 3D envelopes and towers
+  map.addLayer({id:'env',type:'fill-extrusion',source:'lm',filter:['in',['get','kind'],['literal',EXT_ENV]],
+    paint:{'fill-extrusion-pattern':['concat','hatch-',['get','kind']],'fill-extrusion-height':['get','height'],'fill-extrusion-opacity':0.85}});
+  map.addLayer({id:'env-solar',type:'fill-extrusion',source:'lm',minzoom:13.5,filter:['==',['get','kind'],'solar'],
+    paint:{'fill-extrusion-color':'#8c9196','fill-extrusion-height':['get','height'],'fill-extrusion-opacity':0.85}});
+  map.addLayer({id:'env-solar-far',type:'fill-extrusion',source:'lm',maxzoom:13.5,filter:['==',['get','kind'],'solar'],
+    paint:{'fill-extrusion-color':'#8c9196','fill-extrusion-height':['get','height'],'fill-extrusion-opacity':0.85}});
+  map.addLayer({id:'tower',type:'fill-extrusion',source:'lm',filter:['==',['get','kind'],'tower'],
+    paint:{'fill-extrusion-pattern':'hatch-tower','fill-extrusion-height':['get','height'],'fill-extrusion-opacity':0.9}});
+  map.addLayer({id:'ohl_line',type:'line',source:'lm',filter:['in',['get','kind'],['literal',['ohl_50_line','ohl_35_line']]],paint:{'line-color':'#c27c0e','line-width':2,'line-dasharray':[2,1.5]}});
+  map.addLayer({id:'boundary',type:'line',source:'lm',filter:['==',['get','kind'],'boundary'],paint:{'line-color':'#e3191c','line-width':['interpolate',['linear'],['zoom'],9,1.2,15,2.6]}});
+  map.addLayer({id:'buffer300',type:'line',source:'lm',filter:['==',['get','kind'],'buffer300'],paint:{'line-color':'#c27c0e','line-width':1.6,'line-dasharray':[3,2]}});
+  map.addSource('vill',{type:'geojson',data:{type:'FeatureCollection',features:VILL.map(v=>({type:'Feature',properties:{name:v.name},geometry:{type:'Point',coordinates:[v.lon,v.lat]}}))}});
+  map.addLayer({id:'vill-lbl',type:'symbol',source:'vill',layout:{visibility:'none','text-field':['get','name'],'text-font':['Open Sans Semibold'],'text-size':12.5},
+    paint:{'text-color':'#ffffff','text-halo-color':'#1d2420','text-halo-width':1.6}});
+  map.addSource('me',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+  map.addLayer({id:'me-line',type:'line',source:'me',filter:['==',['geometry-type'],'LineString'],paint:{'line-color':'#1f6b52','line-width':2.5,'line-dasharray':[1,1.5]}});
+  map.addLayer({id:'me-pt',type:'circle',source:'me',filter:['==',['geometry-type'],'Point'],paint:{'circle-radius':7,'circle-color':'#1f6b52','circle-stroke-color':'#fff','circle-stroke-width':2.5}});
+  buildLegend(); prepareDistance(); buildVillages();
+  setView3D(true,false);
+});
+
+function swatch(l){
+  if(l.line)return `<span class="sw ${l.hatch?'hatch':''}" style="background:transparent;border:2px ${l.dash?'dashed':'solid'} ${l.col}"></span>`;
+  if(l.hatch)return `<span class="sw hatch" style="background:repeating-linear-gradient(135deg,${l.col} 0 3px,transparent 3px 7px)"></span>`;
+  return `<span class="sw" style="background:${l.col}"></span>`;
+}
+function buildLegend(){
+  const row=l=>`<label class="lrow"><input type="checkbox" checked data-k="${l.k}">${swatch(l)}<span class="lname">${esc(l.name)}</span><span class="ht">${esc(l.h)}</span></label>`;
+  $('#legend-pub').innerHTML=LAYERS.filter(l=>l.status==='pub').map(row).join('');
+  $('#legend-await').innerHTML=LAYERS.filter(l=>l.status==='await').map(row).join('');
+  document.querySelectorAll('.legend').forEach(e=>e.addEventListener('change',applyFilters));
+}
+function applyFilters(){
+  const on=k=>{const i=document.querySelector(`.legend input[data-k="${k}"]`);return !i||i.checked};
+  map.setFilter('flat',['in',['get','kind'],['literal',FLAT.filter(on)]]);
+  map.setFilter('flat-edge',['in',['get','kind'],['literal',FLAT.filter(on)]]);
+  map.setFilter('env',['in',['get','kind'],['literal',on('envelope')?EXT_ENV.filter(on):[]]]);
+  for(const id of ['env-solar','env-solar-far'])map.setLayoutProperty(id,'visibility',on('envelope')&&on('solar')?'visible':'none');
+  for(const id of ['tower','ohl_line','boundary','buffer300'])map.setLayoutProperty(id,'visibility',on(id)?'visible':'none');
+}
+
+/* ---------- distances (local metres, equirectangular about 52.67N) ---------- */
+const LAT0=52.67, KX=111320*Math.cos(LAT0*Math.PI/180), KY=110574;
+const P=(lon,lat)=>[lon*KX,lat*KY];
+let TARGETS={};
+function ringsOf(g){const out=[];const add=p=>p.forEach(r=>out.push(r));
+  if(g.type==='Polygon')add(g.coordinates);else if(g.type==='MultiPolygon')g.coordinates.forEach(add);
+  else if(g.type==='LineString')out.push(g.coordinates);else if(g.type==='MultiLineString')add(g.coordinates);return out}
+function prepareDistance(){
+  const grab=kinds=>{const rings=[],polys=[];DATA.features.filter(f=>kinds.includes(f.properties.kind)).forEach(f=>{
+     ringsOf(f.geometry).forEach(r=>rings.push(r.map(c=>P(c[0],c[1]))));
+     const g=f.geometry;(g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[]).forEach(pp=>polys.push(pp.map(r=>r.map(c=>P(c[0],c[1])))))});
+     return {rings,polys}};
+  TARGETS={
+    panels:{label:'Solar panel area',...grab(['solar'])},
+    dc:{label:'Data centre zone',...grab(['datacentre_west'])},
+    east:{label:'Eastern substation & batteries',...grab(['substation_bess_east'])},
+    walpole:{label:'Walpole substation works',...grab(['walpole_substation'])},
+    ohl:{label:'Overhead line corridor',...grab(['ohl_50','ohl_35'])},
+    site:{label:'Site boundary',...grab(['boundary_area'])}
+  };
+}
+function inRing(pt,r){let c=false;for(let i=0,j=r.length-1;i<r.length;j=i++){const a=r[i],b=r[j];if(((a[1]>pt[1])!==(b[1]>pt[1]))&&(pt[0]<(b[0]-a[0])*(pt[1]-a[1])/(b[1]-a[1])+a[0]))c=!c}return c}
+function nearest(pt,t){
+  for(const poly of t.polys){if(inRing(pt,poly[0])&&!poly.slice(1).some(h=>inRing(pt,h)))return {d:0,q:pt}}
+  let best=Infinity,bq=null;
+  for(const r of t.rings)for(let i=1;i<r.length;i++){const a=r[i-1],b=r[i];const dx=b[0]-a[0],dy=b[1]-a[1];const L=dx*dx+dy*dy;
+    let s=L?((pt[0]-a[0])*dx+(pt[1]-a[1])*dy)/L:0;s=Math.max(0,Math.min(1,s));const x=a[0]+s*dx,y=a[1]+s*dy;const d=Math.hypot(pt[0]-x,pt[1]-y);
+    if(d<best){best=d;bq=[x,y]}}
+  return {d:best,q:bq};
+}
+const fmt=d=>d<1?'inside':d<1000?Math.round(d/10)*10+' m':(d/1000).toFixed(d<10000?1:0)+' km';
+const bearing=(a,b)=>((Math.atan2(b[0]-a[0],b[1]-a[1])*180/Math.PI)+360)%360;
+const unP=q=>[q[0]/KX,q[1]/KY];
+const svLink=(lat,lon,h)=>`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat.toFixed(6)},${lon.toFixed(6)}&heading=${Math.round(h)}&pitch=0&fov=90`;
+const earthLink=(lat,lon,h)=>`https://earth.google.com/web/@${lat.toFixed(6)},${lon.toFixed(6)},10a,1200d,35y,${Math.round(h)}h,75t,0r`;
+const osmLink=(lat,lon)=>`https://www.openstreetmap.org/?mlat=${lat.toFixed(5)}&mlon=${lon.toFixed(5)}#map=16/${lat.toFixed(5)}/${lon.toFixed(5)}`;
+function nearestBuilt(pt){return Object.values(TARGETS).filter(t=>t!==TARGETS.site).map(t=>({t,...nearest(pt,t)})).sort((a,b)=>a.d-b.d)[0]}
+
+function report(lon,lat,title){
+  if(!DATA)return;
+  const pt=P(lon,lat);
+  const rows=Object.values(TARGETS).map(t=>({t,...nearest(pt,t)}));
+  const nb=nearestBuilt(pt);const head=nb.d===0?0:bearing(pt,nb.q);
+  map.getSource('me').setData({type:'FeatureCollection',features:[
+    {type:'Feature',geometry:{type:'Point',coordinates:[lon,lat]},properties:{}},
+    ...(nb.d>0?[{type:'Feature',geometry:{type:'LineString',coordinates:[[lon,lat],unP(nb.q)]},properties:{}}]:[])]});
+  const el=$('#report');el.hidden=false;
+  el.innerHTML=`<h3>${esc(title)}</h3>
+   <dl class="dl">${rows.map(r=>`<dt>${r.t.label}</dt><dd>${fmt(r.d)}</dd>`).join('')}</dl>
+   <p class="note">Distances are to the edge of each published zone. Buildings, panels and towers will sit somewhere inside those zones, so the real distance to a structure may be larger. <span class="await-chip">Awaiting layout</span></p>
+   <div class="btnrow">
+     <a class="btn primary" target="_blank" rel="noopener" href="${svLink(lat,lon,head)}">Street View facing it</a>
+     <a class="btn" target="_blank" rel="noopener" href="${earthLink(lat,lon,head)}">Google Earth</a>
+     <a class="btn" target="_blank" rel="noopener" href="${osmLink(lat,lon)}">OpenStreetMap</a>
+     <button class="btn" id="stand">Stand here in 3D</button>
+   </div>
+   <p class="note">Street View shows today's view. In Google Earth, add the .kml download from the Map tab to see the zones there too.</p>`;
+  $('#stand').onclick=()=>standAt(lon,lat,head);
+  showTab('home');
+}
+function standAt(lon,lat,head){
+  setView3D(true,false);
+  map.flyTo({center:[lon,lat],zoom:16.4,pitch:82,bearing:head,duration:2200,essential:true});
+  toast('Eye-level view: drag to look around, right-drag or two fingers to tilt.');
+}
+function buildVillages(){
+  const rows=VILL.map(v=>({v,d:nearest(P(v.lon,v.lat),TARGETS.site).d})).sort((a,b)=>a.d-b.d);
+  $('#vlist').innerHTML=rows.map(r=>`<button class="vill" data-i="${VILL.indexOf(r.v)}">${esc(r.v.name)}<span>${fmt(r.d)}</span></button>`).join('');
+  $('#vlist').addEventListener('click',e=>{const b=e.target.closest('.vill');if(!b)return;const v=VILL[+b.dataset.i];
+    report(v.lon,v.lat,v.name);const pt=P(v.lon,v.lat);const nb=nearestBuilt(pt);standAt(v.lon,v.lat,nb.d?bearing(pt,nb.q):0)});
+}
+
+/* ---------- popups: source and status for every shape ---------- */
+const popup=new maplibregl.Popup({closeButton:true,maxWidth:'320px'});
+function layerInfo(kind){
+  if(kind==='tower')return LAYERS.find(l=>l.k==='tower');
+  if(kind==='ohl_50_line'||kind==='ohl_35_line')return LAYERS.find(l=>l.k==='ohl_line');
+  return LAYERS.find(l=>l.k===kind);
+}
+map.on('click',e=>{
+  const f=map.queryRenderedFeatures(e.point,{layers:['tower','env','env-solar','env-solar-far','flat','ohl_line','boundary','buffer300'].filter(id=>map.getLayer(id))})[0];
+  if(f){
+    let L=layerInfo(f.properties.kind);
+    const isEnv=f.layer.id.startsWith('env');
+    const chip=(isEnv||L.status==='await')?'<span class="await-chip">Awaiting information</span>':'<span class="pub-chip">Published</span>';
+    const env=isEnv?`<p><b style="font-size:14px">Height envelope</b>: the whole zone is raised to ${f.properties.height} m. Only part of it will be built on.${f.properties.kind==='solar'?' Panel rows are not shown because their layout has not been published.':''}</p>`:'';
+    popup.setLngLat(e.lngLat).setHTML(`<b>${esc(L.name)}</b><div>${chip}</div>${env}<p>${esc(L.known)}</p><p><span class="await-chip">Awaiting</span> ${esc(L.awaiting)}</p><p class="src">Source: ${esc(L.src)}</p>`).addTo(map);
+  }else popup.remove();
+  report(e.lngLat.lng,e.lngLat.lat,f?layerInfo(f.properties.kind).name:'Selected point');
+});
+['env','env-solar','env-solar-far','flat','tower'].forEach(id=>{map.on('mouseenter',id,()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave',id,()=>map.getCanvas().style.cursor='')});
+
+/* ---------- UI wiring ---------- */
+function showTab(name){document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===name));
+  document.querySelectorAll('[data-panel]').forEach(s=>s.hidden=s.dataset.panel!==name);$('#panel').classList.remove('min')}
+document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)showTab(b.dataset.tab)});
+document.querySelectorAll('[data-fly]').forEach(b=>b.onclick=()=>{const v=VIEWS[b.dataset.fly];map.flyTo({...v,pitch:is3D?v.pitch:0,duration:1800})});
+function setBase(sat){map.setLayoutProperty('sat','visibility',sat?'visible':'none');map.setLayoutProperty('osm','visibility',sat?'none':'visible');
+  if(map.getLayer('vill-lbl'))map.setLayoutProperty('vill-lbl','visibility',sat?'visible':'none');
+  $('#bm-sat').setAttribute('aria-pressed',sat);$('#bm-map').setAttribute('aria-pressed',!sat)}
+$('#bm-sat').onclick=()=>setBase(true);$('#bm-map').onclick=()=>setBase(false);
+function setView3D(on,animate=true){is3D=on;$('#v-3d').setAttribute('aria-pressed',on);$('#v-2d').setAttribute('aria-pressed',!on);
+  for(const id of ['env','env-solar','env-solar-far','tower'])if(map.getLayer(id))map.setPaintProperty(id,'fill-extrusion-height',on?['get','height']:0);
+  if(animate)map.easeTo({pitch:on?60:0,duration:900})}
+$('#v-3d').onclick=()=>setView3D(true);$('#v-2d').onclick=()=>setView3D(false);
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-copy]');if(!b)return;const el=document.getElementById(b.dataset.copy);
+  try{await navigator.clipboard.writeText(el.textContent.trim());toast('Address copied')}catch(_){const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);toast('Address selected. Press Ctrl+C or Cmd+C to copy.')}});
+const disc=$('#disc');
+function openDisc(){disc.hidden=false;$('#discOk').focus()}
+$('#discOk').onclick=()=>{disc.hidden=true;try{localStorage.setItem('lm_disc_ok','2026-10-29')}catch(_){}};
+$('#showDisc').onclick=openDisc;
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!disc.hidden)$('#discOk').click()});
+let seen=null;try{seen=localStorage.getItem('lm_disc_ok')}catch(_){}
+if(!seen)openDisc();
+$('#grab').onclick=()=>$('#panel').classList.toggle('min');
+
+$('#pcform').addEventListener('submit',async e=>{e.preventDefault();const pc=$('#pc').value.trim();if(!pc)return;
+  try{const r=await fetch('https://api.postcodes.io/postcodes/'+encodeURIComponent(pc));const j=await r.json();
+    if(j.status!==200)throw new Error(j.error||'not found');
+    const {longitude:lon,latitude:lat,postcode}=j.result;report(lon,lat,postcode);
+    const pt=P(lon,lat);const nb=nearestBuilt(pt);standAt(lon,lat,nb.d?bearing(pt,nb.q):0);
+  }catch(err){toast('That postcode was not found. Check it and try again, or tap the map instead.')}});
+$('#geo').onclick=()=>{if(!navigator.geolocation){toast('Location is not available in this browser.');return}
+  navigator.geolocation.getCurrentPosition(p=>{const lon=p.coords.longitude,lat=p.coords.latitude;report(lon,lat,'Your location');const pt=P(lon,lat);const nb=nearestBuilt(pt);standAt(lon,lat,nb.d?bearing(pt,nb.q):0)},
+  ()=>toast('Location permission was refused. Enter a postcode instead.'),{enableHighAccuracy:true,timeout:10000})};
+
+function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+$('#gj').onclick=()=>DATA&&download('longmarsh-green-energy.geojson',JSON.stringify(DATA),'application/geo+json');
+$('#kml').onclick=()=>DATA&&download('longmarsh-green-energy.kml',toKML(DATA),'application/vnd.google-earth.kml+xml');
+function kmlColor(hex,a){const h=hex.replace('#','');return a+h.slice(4,6)+h.slice(2,4)+h.slice(0,2)}
+function toKML(g){
+  const ring=(r,h)=>r.map(c=>`${c[0].toFixed(6)},${c[1].toFixed(6)},${h}`).join(' ');
+  const poly=(p,h)=>`<Polygon>${h?'<extrude>1</extrude><altitudeMode>relativeToGround</altitudeMode>':'<tessellate>1</tessellate>'}<outerBoundaryIs><LinearRing><coordinates>${ring(p[0],h)}</coordinates></LinearRing></outerBoundaryIs>${p.slice(1).map(r=>`<innerBoundaryIs><LinearRing><coordinates>${ring(r,h)}</coordinates></LinearRing></innerBoundaryIs>`).join('')}</Polygon>`;
+  const geomK=(geo,h)=>{if(geo.type==='Polygon')return poly(geo.coordinates,h);if(geo.type==='MultiPolygon')return `<MultiGeometry>${geo.coordinates.map(p=>poly(p,h)).join('')}</MultiGeometry>`;
+    const ls=c=>`<LineString><tessellate>1</tessellate><coordinates>${ring(c,0)}</coordinates></LineString>`;
+    if(geo.type==='LineString')return ls(geo.coordinates);if(geo.type==='MultiLineString')return `<MultiGeometry>${geo.coordinates.map(ls).join('')}</MultiGeometry>`;return ''};
+  const style=(id,col,a,w,fill)=>`<Style id="${id}"><LineStyle><color>${kmlColor(col,'ff')}</color><width>${w}</width></LineStyle><PolyStyle><color>${kmlColor(col,a)}</color>${fill?'':'<fill>0</fill>'}</PolyStyle></Style>`;
+  const styles=LAYERS.filter(l=>!l.hatch).map(l=>style(l.k,l.col,'99',l.line?3:1,!l.line)).join('')+style('await','#c27c0e','66',2,true)+style('awaitline','#c27c0e','ff',2,false);
+  const pm=(f,folder)=>{const k=f.properties.kind;const L=layerInfo(k)||{};const h=folder==='env'?f.properties.height:(k==='tower'?f.properties.height:0);
+    const st=folder==='env'?'await':(k==='tower'?'await':(k.endsWith('_line')||k==='buffer300')?'awaitline':k);
+    const status=(folder==='env'||L.status==='await')?'PRESUMPTION – awaiting information. ':'PUBLISHED. ';
+    return `<Placemark><name>${esc(folder==='env'?(L.name+' – height envelope '+h+' m'):(L.name||k))}</name><description>${esc(status+(L.known||'')+' Awaiting: '+(L.awaiting||'')+' Source: '+(L.src||''))}</description><styleUrl>#${st}</styleUrl>${geomK(f.geometry,h)}</Placemark>`};
+  const pub=g.features.filter(f=>FLAT.includes(f.properties.kind)||f.properties.kind==='boundary').map(f=>pm(f,'pub')).join('');
+  const env=g.features.filter(f=>EXT.includes(f.properties.kind)).map(f=>pm(f,'env')).join('');
+  const aw=g.features.filter(f=>['tower','ohl_50_line','ohl_35_line','buffer300'].includes(f.properties.kind)).map(f=>pm(f,'aw')).join('');
+  return `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Longmarsh Green Energy</name><description>Independent visualisation from Scoping Report Fig. 1-3 (Oct 2026). Indicative.</description>${styles}<Folder><name>Published (applicant's plans)</name>${pub}</Folder><Folder><name>Presumptions – awaiting information: height envelopes</name><visibility>1</visibility>${env}</Folder><Folder><name>Presumptions – awaiting information: towers, line, 300 m</name>${aw}</Folder></Document></kml>`;
+}
+</script>
+</body>
+</html>
