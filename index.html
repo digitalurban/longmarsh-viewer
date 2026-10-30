@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="data/longmarsh-data.js?v=20261030"></script>
+<script src="data/longmarsh-data.js?v=20261030b"></script>
 <script data-goatcounter="https://digitalurban.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 <style>
 /* Layout: full-bleed map; a field-notebook panel docked left on desktop, a bottom sheet on phones.
@@ -137,6 +137,9 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
   .body{padding:12px 16px 16px}
 }
 @media (prefers-reduced-motion:reduce){.panel{transition:none}}
+.ovkey{display:flex;flex-direction:column;gap:3px;margin:4px 0 8px;font-size:12px}
+.ovkey i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-2px;opacity:.8}
+.ovkey small{opacity:.75;line-height:1.35;margin-top:2px}
 </style>
 </head>
 <body>
@@ -189,6 +192,7 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
       <ul class="plain">
         <li><b>Map tab:</b> the buttons <i>Whole scheme</i>, <i>Western Site &amp; data centre</i>, <i>Eastern Site</i> and <i>Walpole</i> take you to each area on the flat (2D) map. Press <i>3D</i> (top right) to raise the heights.</li>
         <li><b>Layers:</b> tick or untick any item in the Map tab to show or hide it. <span class="pub-chip">Published</span> layers come from the developer's plans. <span class="await-chip">Awaiting information</span> layers are presumptions where details haven't been published.</li>
+        <li><b>Flood zones and farmland grades</b> (Map tab) add official maps from the Environment Agency and Defra underneath the scheme. Tap a coloured area to see what it means.</li>
         <li><b>Other solar projects</b> (Map tab) shows The Droves and High Grove, two separate national solar projects to the east, for context. Tick or untick them in the legend.</li>
         <li><b>Click any shape</b> to see what it is, its maximum height, its source document and what is still unknown. The Near me tab shows that spot's distances to each part of the scheme.</li>
       </ul>
@@ -219,6 +223,17 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
       <div class="legend" id="legend-await"></div>
       <div class="awaitbox">
         <p>Anything hatched in amber, and the grey solar blocks in 3D, are <b>presumptions</b>. They show the scale of what's allowed, not a design. Exact building positions, panel rows and tower sites have not been published yet. Tap any shape to see its source.</p>
+      </div>
+      <h3 class="grp"><span class="pub-chip" style="color:#1f5f8b;border-color:#1f5f8b">Official data</span> Flood risk and farmland grade</h3>
+      <div class="legend" id="legend-official">
+        <label class="lrow"><input type="checkbox" data-ov="flood"><span class="sw" style="background:linear-gradient(90deg,#08519c 0 50%,#6baed6 50%);opacity:.75"></span><span class="lname">Flood Zones 3 (dark) and 2 (light), rivers and sea</span><span class="ht">EA</span></label>
+        <label class="lrow"><input type="checkbox" data-ov="alc"><span class="sw" style="background:linear-gradient(90deg,#0a7cff 0 25%,#75dcff 25% 50%,#007a00 50% 75%,#a6f5a6 75%);opacity:.85"></span><span class="lname">Agricultural land grade (Predictive ALC, as used in the Scoping Report)</span><span class="ht">Defra</span></label>
+      </div>
+      <div class="ovkey" id="key-flood" hidden><span><i style="background:#08519c"></i>Flood Zone 3: high probability (1% river / 0.5% sea or more each year)</span><span><i style="background:#6baed6"></i>Flood Zone 2: medium probability</span><small>Environment Agency Flood Map for Planning, updated 22 Oct 2026. Ignores flood defences. Not for individual properties.</small></div>
+      <div class="ovkey" id="key-alc" hidden><span><i style="background:#0a7cff"></i>Grade 1 excellent (BMV)</span><span><i style="background:#75dcff"></i>Grade 2 very good (BMV)</span><span><i style="background:#007a00"></i>Grade 3a good (BMV)</span><span><i style="background:#a6f5a6"></i>Grade 3b moderate</span><span><i style="background:#ffff66"></i>Grade 4 poor</span><span><i style="background:#a5805f"></i>Grade 5 very poor</span><span><i style="background:#ffc35a"></i>Non-agricultural</span><span><i style="background:#ff6457"></i>Urban</span><small>Defra Predictive Agricultural Land Classification Map for England (2026), the map used in the Scoping Report, loaded live from Defra in its official colours. It's a prediction for strategic use; field surveys give the definitive grade. BMV = best and most versatile land.</small></div>
+      <div class="btnrow">
+        <button class="btn" id="showFlood">Flood zones</button>
+        <button class="btn" id="showAlc">Farmland grades</button>
       </div>
       <h3 class="grp"><span class="pub-chip" style="color:#6b4fa0;border-color:#6b4fa0">Context</span> Other solar projects</h3>
       <div class="legend" id="legend-other"></div>
@@ -281,7 +296,8 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
         <details class="ground"><summary><b>Loss of prime farmland (best and most versatile land)</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
           <p><span class="lbl">The issue</span>Much of the site is predicted to be "best and most versatile" (BMV) farmland, which policy defines as Grades 1, 2 and 3a. The draft data centre policy says poorer-quality land should be used where possible.</p>
           <p><span class="lbl">What the documents say</span>Walpole substation land is all predicted Grade&nbsp;1. Most of the Western Site, where the data centre goes, is Grade&nbsp;2 and 3a, with some Grade&nbsp;1. The Eastern Cable Route is mostly Grade&nbsp;2 and 3a, with Grade&nbsp;1 east of the River Great Ouse. The Eastern Site is Grade&nbsp;2 and 3b in the west and mostly 3a in the east. These are <i>predictive</i> grades from a national map; the developer plans field soil surveys. The draft data centre policy says that if significant development of farmland is necessary, poorer land (3b, 4, 5) should be used where possible, and that the Secretary of State should ensure higher-quality land has been avoided where possible. The borough's Local Plan (Policy LP24, as quoted in the Scoping Report) says the council will seek to protect productive and BMV land, and that applications for other uses that would adversely affect it are likely to be refused unless the benefits outweigh its loss.</p>
-          <p><span class="lbl">Developer's position</span>About 85% of land within 6.7&nbsp;km of Walpole substation, and about 95% within 20&nbsp;km, is BMV, so there is little alternative near the grid connection. After 60 years the solar land would be restored so it could return to farming.</p>
+          <p><p><span class="lbl">Official map, measured</span>On Defra's Predictive ALC Map for England (the map the Scoping Report uses), about 87% of the land inside the site boundary is predicted to be BMV: roughly 9% Grade&nbsp;1, 38% Grade&nbsp;2 and 40% Grade&nbsp;3a, with 11% Grade&nbsp;3b. About 85% of the solar areas and all of the data centre zone are predicted BMV. These are this viewer's measurements of a predictive map, not field survey results. Turn on <i>Agricultural land grade</i> in the Map tab to see it.</p>
+          <span class="lbl">Developer's position</span>About 85% of land within 6.7&nbsp;km of Walpole substation, and about 95% within 20&nbsp;km, is BMV, so there is little alternative near the grid connection. After 60 years the solar land would be restored so it could return to farming.</p>
           <p><span class="lbl">Points to raise</span>The data centre, Western substation and batteries, Walpole substation and Western overhead line are treated as permanent development, so no return to farming is proposed for that land. Ask for the field-survey results, the area of each grade under permanent and under temporary development, and evidence that poorer land was considered. National food security is also in scope: the developer has said it will assess it.</p>
           <p class="src">Scoping Report §14.4.5–14.4.6, §4.5.4, §5.6.4 (KL&amp;WN Local Plan Policy LP24); draft Data Centres NPS paras 362 and 379</p></div></details>
         <details class="ground"><summary><b>Site chosen because the land was available (land ownership)</b><span class="await-chip">Subject to clarification</span></summary><div class="gbody">
@@ -305,7 +321,8 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
         <details class="ground"><summary><b>Flood risk on the Western Site</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
           <p><span class="lbl">The issue</span>Most of the Western Site, where the data centre is proposed, is in the Environment Agency's highest tidal flood zone.</p>
           <p><span class="lbl">What the documents say</span>Most of the Western Site is in Flood Zone&nbsp;3 (tidal), with a small area of Zone&nbsp;2 at its southern end and one area of Zone&nbsp;1 near its centre. The Western Cable Route is entirely in Zones 2 and 3, and the Walpole land almost entirely. The draft data centre policy says the Secretary of State must be satisfied that the Sequential and Exception Tests have been applied where required.</p>
-          <p><span class="lbl">Developer's position</span>Flood risk will be assessed with the Environment Agency, the Lead Local Flood Authority and the Internal Drainage Boards.</p>
+          <p><p><span class="lbl">Official map, measured</span>On the Environment Agency's Flood Map for Planning (updated 22 October 2026), about 42% of the land inside the whole site boundary is in Flood Zone&nbsp;3, including almost all of the data centre zone and about 37% of the solar areas. Flood zones ignore defences. These are this viewer's measurements; turn on <i>Flood Zones</i> in the Map tab to see the map.</p>
+          <span class="lbl">Developer's position</span>Flood risk will be assessed with the Environment Agency, the Lead Local Flood Authority and the Internal Drainage Boards.</p>
           <p><span class="lbl">Points to raise</span>Exactly where the data centre buildings sit in relation to the flood zones (including the Zone&nbsp;1 area), how the Sequential Test has been applied, and how the buildings would stay safe over their lifetime.</p>
           <p class="src">Scoping Report §13.4.52; draft Data Centres NPS para 312</p></div></details>
         <details class="ground"><summary><b>Landscape and new overhead lines</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
@@ -447,6 +464,12 @@ SW1A 2EG</div></dd>
         <a class="doc" href="https://national-infrastructure-consenting.planninginspectorate.gov.uk/projects/EN0110048/download-boundary" target="_blank" rel="noopener"><b>Official site boundary (GeoJSON)</b><span>JSON</span><small>The order limits shown on this map as the red boundary.</small></a>
         <a class="doc" href="https://national-infrastructure-consenting.planninginspectorate.gov.uk/decision-making-process-guide" target="_blank" rel="noopener"><b>How the NSIP process works</b><span>web</span><small>The Planning Inspectorate's guide to each stage.</small></a>
       </div>
+      <h2>Official flood and farmland data</h2>
+      <div class="doclist">
+        <a class="doc" href="https://flood-map-for-planning.service.gov.uk/" target="_blank" rel="noopener"><b>Flood Map for Planning (GOV.UK)</b><span>web</span><small>Check the flood zone of any location and get an official flood map.</small></a>
+        <a class="doc" href="https://www.data.gov.uk/dataset/104434b0-5263-4c90-9b1e-e43b1d57c750/flood-map-for-planning-flood-zones1" target="_blank" rel="noopener"><b>Flood Map for Planning – Flood Zones (data)</b><span>data</span><small>Environment Agency dataset shown on this map. Open Government Licence.</small></a>
+        <a class="doc" href="https://www.data.gov.uk/dataset/fb7463b9-0e37-4d68-bb70-bbf658f1c5dc/predictive-agricultural-land-classification-map-for-england" target="_blank" rel="noopener"><b>Predictive Agricultural Land Classification Map for England (data)</b><span>data</span><small>Defra, 2026. The map used in the Scoping Report and shown on this map. Open Government Licence.</small></a>
+      </div>
       <h2>Other solar projects nearby</h2>
       <div class="doclist">
         <a class="doc" href="https://national-infrastructure-consenting.planninginspectorate.gov.uk/projects/EN0110013" target="_blank" rel="noopener"><b>The Droves Solar Farm (EN0110013)</b><span>web</span><small>About 500 MW between Swaffham and Castle Acre. In examination.</small></a>
@@ -479,6 +502,7 @@ SW1A 2EG</div></dd>
       <p><b>Based on newly published documents.</b> The information comes from documents published in October 2026, early in the consultation. It may contain errors or omissions, and the scheme and documents will change. Sources were last checked on 29 October 2026.</p>
       <ul class="plain">
         <li>Map shapes are traced from the developer's indicative plans and are approximate. Anything marked <b>awaiting information</b> is a presumption made for this viewer, not part of the proposals.</li>
+        <li>The flood zone and farmland grade layers are official Environment Agency and Defra data (the flood zones simplified for display), shown for context. Flood zones ignore flood defences, and the farmland grades are Defra's predictive map, loaded live from Defra. Use the official services for any specific site.</li>
         <li>Distances are approximate straight-line measurements. Do not rely on them for property, legal or financial decisions.</li>
         <li>The Objections and Respond tabs summarise published documents and policy to help people take part. They are not legal, planning or other professional advice, and they do not represent the views of any organisation.</li>
       </ul>
@@ -632,7 +656,7 @@ function hatchImage(hex){
 
 async function loadData(){
   if(window.LM_DATA&&window.LM_VILL)return [window.LM_DATA,window.LM_VILL];
-  return Promise.all([fetch("data/longmarsh.geojson?v=20261030").then(r=>r.json()),fetch("data/villages.json?v=20261030").then(r=>r.json())]);
+  return Promise.all([fetch("data/longmarsh.geojson?v=20261030b").then(r=>r.json()),fetch("data/villages.json?v=20261030b").then(r=>r.json())]);
 }
 
 map.on('load',async()=>{
@@ -657,6 +681,7 @@ map.on('load',async()=>{
     paint:{'fill-color':['match',['get','ref'],'EN0110013','#6b4fa0','#a0527a'],'fill-opacity':0.28}});
   map.addLayer({id:'other-line',type:'line',source:'lm',filter:['==',['get','kind'],'other_solar'],layout:{visibility:'none'},
     paint:{'line-color':['match',['get','ref'],'EN0110013','#6b4fa0','#a0527a'],'line-width':2.2,'line-dasharray':[2,1]}});
+  addOfficialLayers();
   map.addLayer({id:'boundary',type:'line',source:'lm',filter:['==',['get','kind'],'boundary'],paint:{'line-color':'#e3191c','line-width':['interpolate',['linear'],['zoom'],9,1.2,15,2.6]}});
   map.addLayer({id:'buffer300',type:'line',source:'lm',filter:['==',['get','kind'],'buffer300'],paint:{'line-color':'#c27c0e','line-width':1.6,'line-dasharray':[3,2]}});
   map.addSource('vill',{type:'geojson',data:{type:'FeatureCollection',features:VILL.map(v=>({type:'Feature',properties:{name:v.name},geometry:{type:'Point',coordinates:[v.lon,v.lat]}}))}});
@@ -668,6 +693,37 @@ map.on('load',async()=>{
   buildLegend(); prepareDistance(); buildVillages();
   setView3D(true,false);
 });
+
+/* ---------- official overlays: EA flood zones (hosted copy) and Defra Predictive ALC (live WMS) ---------- */
+const DV='20261030b';
+const OV={
+  flood:{url:'data/flood-zones.geojson?v='+DV,attr:'Flood zones: contains Environment Agency information © Environment Agency and/or database right 2026 (OGL)',loaded:false},
+  alc:{attr:'Farmland grade: Predictive ALC Map for England © Defra copyright and/or database right (OGL)',loaded:true}};
+const ALC_WMS='https://environment.data.gov.uk/spatialdata/predictive-alc-england-raster/wms?service=WMS&version=1.3.0&request=GetMap&layers=Predictive_ALC_England_Raster&styles=&format=image/png&transparent=true&crs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}';
+const ALC_GFI='https://environment.data.gov.uk/spatialdata/predictive-alc-england/wms?service=WMS&version=1.3.0&request=GetFeatureInfo&layers=Predictive_ALC_England&query_layers=Predictive_ALC_England&styles=&format=image/png&info_format=application/json&crs=EPSG:3857&width=3&height=3&i=1&j=1&bbox=';
+const ALC_NAME={'1':'Grade 1 (excellent)','2':'Grade 2 (very good)','3a':'Grade 3a (good)','3b':'Grade 3b (moderate)','4':'Grade 4 (poor)','5':'Grade 5 (very poor)','NA':'Non-agricultural','U':'Urban'};
+function addOfficialLayers(){
+  const empty={type:'FeatureCollection',features:[]};
+  map.addSource('alc',{type:'raster',tiles:[ALC_WMS],tileSize:256,attribution:OV.alc.attr});
+  map.addSource('flood',{type:'geojson',data:empty,attribution:OV.flood.attr});
+  const below=map.getLayer('flat')?'flat':undefined;
+  map.addLayer({id:'alc-fill',type:'raster',source:'alc',layout:{visibility:'none'},paint:{'raster-opacity':0.62,'raster-resampling':'nearest'}},below);
+  map.addLayer({id:'flood-fill',type:'fill',source:'flood',layout:{visibility:'none'},paint:{'fill-color':['match',['get','flood_zone'],'FZ3','#08519c','#6baed6'],'fill-opacity':['match',['get','flood_zone'],'FZ3',0.42,0.5]}},below);
+  map.addLayer({id:'flood-line',type:'line',source:'flood',layout:{visibility:'none'},paint:{'line-color':'#08306b','line-width':0.7,'line-opacity':0.5}},below);
+}
+async function setOverlay(name,on){
+  const o=OV[name];
+  if(on&&!o.loaded){
+    try{toast('Loading Environment Agency flood zones…');
+      const d=await fetch(o.url).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});map.getSource(name).setData(d);o.loaded=true}
+    catch(err){toast('Could not load this layer. If you opened the file directly, use the online viewer.');const i=document.querySelector(`[data-ov="${name}"]`);if(i)i.checked=false;return}
+  }
+  const ids=name==='flood'?['flood-fill','flood-line']:['alc-fill'];
+  ids.forEach(id=>map.setLayoutProperty(id,'visibility',on?'visible':'none'));
+  const i=document.querySelector(`[data-ov="${name}"]`);if(i)i.checked=on;
+  const k=document.getElementById('key-'+name);if(k)k.hidden=!on;
+}
+document.addEventListener('change',e=>{const i=e.target.closest('[data-ov]');if(i)setOverlay(i.dataset.ov,i.checked)});
 
 function swatch(l){
   if(l.line)return `<span class="sw ${l.hatch?'hatch':''}" style="background:transparent;border:2px ${l.dash?'dashed':'solid'} ${l.col}"></span>`;
@@ -791,7 +847,23 @@ map.on('click',e=>{
     const chip=(isEnv||L.status==='await')?'<span class="await-chip">Awaiting information</span>':'<span class="pub-chip">Published</span>';
     const env=isEnv?`<p><b style="font-size:14px">Height envelope</b>: the whole zone is raised to ${f.properties.height} m. Only part of it will be built on.${f.properties.kind==='solar'?' Panel rows are not shown because their layout has not been published.':''}</p>`:'';
     popup.setLngLat(e.lngLat).setHTML(`<b>${esc(L.name)}</b><div>${chip}</div>${env}<p>${esc(L.known)}</p><p><span class="await-chip">Awaiting</span> ${esc(L.awaiting)}</p><p class="src">Source: ${esc(L.src)}</p>`).addTo(map);
-  }else popup.remove();
+  }else{
+    const floodOn=map.getLayer('flood-fill')&&map.getLayoutProperty('flood-fill','visibility')==='visible';
+    const alcOn=map.getLayer('alc-fill')&&map.getLayoutProperty('alc-fill','visibility')==='visible';
+    const fz=floodOn?map.queryRenderedFeatures(e.point,{layers:['flood-fill']})[0]:null;
+    let h='';
+    if(fz)h+=`<b>${fz.properties.flood_zone==='FZ3'?'Flood Zone 3':'Flood Zone 2'}</b> (rivers and sea)<p>${fz.properties.flood_zone==='FZ3'?'High probability: land with a 1% or greater chance of flooding from rivers, or 0.5% or greater from the sea, in any year.':'Medium probability: between 0.1% and 1% a year from rivers, or 0.1% and 0.5% from the sea.'} Flood zones show the chance of flooding without taking flood defences into account.</p><p class="src">Environment Agency, Flood Map for Planning – Flood Zones (updated 22 Oct 2026). Simplified for display. Check the official <a href="https://flood-map-for-planning.service.gov.uk/" target="_blank" rel="noopener">Flood Map for Planning</a> for any specific place.</p>`;
+    if(h||alcOn){
+      popup.setLngLat(e.lngLat).setHTML(h+(alcOn?'<div id="alcinfo"><i>Checking farmland grade…</i></div>':'')).addTo(map);
+      if(alcOn){
+        const m=maplibregl.MercatorCoordinate.fromLngLat(e.lngLat),R=6378137*Math.PI,x=(m.x*2-1)*R,y=(1-m.y*2)*R,d=Math.max(5,40075016/(512*Math.pow(2,map.getZoom())));
+        fetch(ALC_GFI+[x-d*1.5,y-d*1.5,x+d*1.5,y+d*1.5].join(',')).then(r=>r.json()).then(j=>{
+          const g=j.features&&j.features[0]&&j.features[0].properties.alc;const el=document.getElementById('alcinfo');if(!el)return;
+          el.innerHTML=g?`<b>Farmland: ${esc(ALC_NAME[g]||g)}</b><p>${['1','2','3a'].includes(g)?'Best and most versatile (BMV) land in planning policy.':['3b','4','5'].includes(g)?'Not best and most versatile land.':''}</p><p class="src">Defra Predictive ALC Map for England (2026), as used in the Scoping Report. A prediction, not a field survey.</p>`:'<p>No farmland grade here.</p>';
+        }).catch(()=>{const el=document.getElementById('alcinfo');if(el)el.innerHTML='<p>Could not reach the Defra map service.</p>'});
+      }
+    }else popup.remove();
+  }
   report(e.lngLat.lng,e.lngLat.lat,f?layerInfo(f.properties.kind).name:'Selected point');
 });
 ['env','env-solar','env-solar-far','flat','tower'].forEach(id=>{map.on('mouseenter',id,()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave',id,()=>map.getCanvas().style.cursor='')});
@@ -817,6 +889,10 @@ $('#showOther').onclick=()=>{document.querySelectorAll('#legend-other input').fo
   const wide=window.innerWidth>760;
   map.fitBounds([[0.43,52.57],[0.93,52.71]],{padding:wide?{top:60,bottom:60,left:440,right:60}:{top:40,bottom:Math.round(window.innerHeight*0.5),left:30,right:30},pitch:0,bearing:0,duration:1800});
   toast('Showing The Droves and High Grove solar projects to the east, for context.')};
+$('#showFlood').onclick=()=>{setOverlay('flood',true);setView3D(false,false);
+  map.fitBounds([[0.17,52.585],[0.58,52.74]],{padding:window.innerWidth>760?{top:60,bottom:60,left:440,right:60}:{top:40,bottom:Math.round(window.innerHeight*0.5),left:30,right:30},pitch:0,bearing:0,duration:1500})};
+$('#showAlc').onclick=()=>{setOverlay('alc',true);setView3D(false,false);
+  map.fitBounds([[0.17,52.585],[0.58,52.74]],{padding:window.innerWidth>760?{top:60,bottom:60,left:440,right:60}:{top:40,bottom:Math.round(window.innerHeight*0.5),left:30,right:30},pitch:0,bearing:0,duration:1500})};
 $('#grab').onclick=()=>$('#panel').classList.toggle('min');
 
 $('#pcform').addEventListener('submit',async e=>{e.preventDefault();const pc=$('#pc').value.trim();if(!pc)return;

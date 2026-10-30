@@ -72,4 +72,4 @@ Map shapes are approximate. Anything marked "awaiting information" is a presumpt
 
 ## Credits
 
-Aerial imagery © Esri, Maxar and Earthstar Geographics. Map tiles © OpenStreetMap contributors. Rendering uses MapLibre GL JS 4.7.1. Postcode lookup uses postcodes.io (Open Government Licence). The scheme geometry is derived from documents published by EPL Norfolk Limited and Logika Group for consultation.
+Flood zones: Environment Agency Flood Map for Planning – Flood Zones (updated 22 October 2026), contains Environment Agency information © Environment Agency and/or database right, Open Government Licence. Farmland grades: Defra Predictive Agricultural Land Classification Map for England (2026), loaded live from Defra's map service, © Defra copyright and/or database right, Open Government Licence. The flood zones are simplified for display. Aerial imagery © Esri, Maxar and Earthstar Geographics. Map tiles © OpenStreetMap contributors. Rendering uses MapLibre GL JS 4.7.1. Postcode lookup uses postcodes.io (Open Government Licence). The scheme geometry is derived from documents published by EPL Norfolk Limited and Logika Group for consultation.
