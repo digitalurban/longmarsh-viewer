@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="data/longmarsh-data.js"></script>
+<script src="data/longmarsh-data.js?v=20261030"></script>
 <script data-goatcounter="https://digitalurban.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 <style>
 /* Layout: full-bleed map; a field-notebook panel docked left on desktop, a bottom sheet on phones.
@@ -632,7 +632,7 @@ function hatchImage(hex){
 
 async function loadData(){
   if(window.LM_DATA&&window.LM_VILL)return [window.LM_DATA,window.LM_VILL];
-  return Promise.all([fetch('data/longmarsh.geojson').then(r=>r.json()),fetch('data/villages.json').then(r=>r.json())]);
+  return Promise.all([fetch("data/longmarsh.geojson?v=20261030").then(r=>r.json()),fetch("data/villages.json?v=20261030").then(r=>r.json())]);
 }
 
 map.on('load',async()=>{
