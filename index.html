@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="data/longmarsh-data.js?v=20261030b"></script>
+<script src="data/longmarsh-data.js?v=20261031"></script>
 <script data-goatcounter="https://digitalurban.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 <style>
 /* Layout: full-bleed map; a field-notebook panel docked left on desktop, a bottom sheet on phones.
@@ -140,6 +140,18 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
 .ovkey{display:flex;flex-direction:column;gap:3px;margin:4px 0 8px;font-size:12px}
 .ovkey i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-2px;opacity:.8}
 .ovkey small{opacity:.75;line-height:1.35;margin-top:2px}
+.dlg{position:fixed;inset:0;background:rgba(10,20,15,.55);z-index:50;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:24px 12px}
+.dlg[hidden]{display:none}
+.dlg-card{background:var(--panel,#fbfaf6);color:inherit;max-width:760px;width:100%;border-radius:12px;padding:20px 22px 26px;position:relative;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.dlg-card h2{margin:0 0 8px}.dlg-card h3{margin:18px 0 6px;font-size:14px;text-transform:uppercase;letter-spacing:.06em}
+.dlg-x{position:absolute;right:12px;top:8px;border:0;background:none;font-size:28px;cursor:pointer;color:inherit}
+.dlg-card textarea,.dlg-card input{width:100%;box-sizing:border-box;font:14px/1.45 inherit;font-family:inherit;padding:8px 10px;border:1px solid #c9c6bb;border-radius:8px;background:#fff;color:#111;margin:4px 0 10px}
+#lt-out{font-family:Georgia,serif;font-size:14px}
+.lt-lab{display:block;font-size:13px;font-weight:600;margin-top:4px}
+.lt-row{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+.lt-where{background:#eef4ef;border-radius:8px;padding:8px 10px;font-size:13px}
+@media (max-width:600px){.lt-row{grid-template-columns:1fr}.dlg{padding:0}.dlg-card{border-radius:0}}
+body.dlg-open{overflow:hidden}
 </style>
 </head>
 <body>
@@ -192,13 +204,14 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
       <ul class="plain">
         <li><b>Map tab:</b> the buttons <i>Whole scheme</i>, <i>Western Site &amp; data centre</i>, <i>Eastern Site</i> and <i>Walpole</i> take you to each area on the flat (2D) map. Press <i>3D</i> (top right) to raise the heights.</li>
         <li><b>Layers:</b> tick or untick any item in the Map tab to show or hide it. <span class="pub-chip">Published</span> layers come from the developer's plans. <span class="await-chip">Awaiting information</span> layers are presumptions where details haven't been published.</li>
-        <li><b>Flood zones and farmland grades</b> (Map tab) add official maps from the Environment Agency and Defra underneath the scheme. Tap a coloured area to see what it means.</li>
+        <li><b>Official data</b> (Map tab) adds national maps of flood risk, farmland grade, heritage and protected wildlife sites from the Environment Agency, Defra, Historic England and Natural England. Tap any feature for what it is, how far it is from the site and why it matters. Tap a coloured area to see what it means.</li>
         <li><b>Other solar projects</b> (Map tab) shows The Droves and High Grove, two separate national solar projects to the east, for context. Tick or untick them in the legend.</li>
         <li><b>Click any shape</b> to see what it is, its maximum height, its source document and what is still unknown. The Near me tab shows that spot's distances to each part of the scheme.</li>
       </ul>
       <h2>Checking your own area</h2>
       <ul class="plain">
         <li><b>Near me tab:</b> enter a postcode, or press <i>Use my location</i> (your browser will ask permission first). You'll see straight-line distances to the solar areas, the data centre zone, the substations, the overhead line and the site boundary.</li>
+        <li><b>Write a response letter</b> (Near me tab, after a postcode) drafts a letter built from your location, the concerns you choose and your own words, ready to print, sign and post. Check and edit it before you send it.</li>
         <li>From there, <b>Street View facing it</b> opens Google Street View at that spot, pointing towards the nearest part of the scheme. <b>Stand here in 3D</b> drops you to eye level on this map.</li>
         <li><b>Villages tab:</b> 45 nearby villages, sorted by distance to the site boundary. Tap one to zoom to it on the flat map, framed with the nearest part of the scheme, and see its distances. Use <i>Stand here in 3D</i> for an eye-level view.</li>
       </ul>
@@ -224,16 +237,27 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
       <div class="awaitbox">
         <p>Anything hatched in amber, and the grey solar blocks in 3D, are <b>presumptions</b>. They show the scale of what's allowed, not a design. Exact building positions, panel rows and tower sites have not been published yet. Tap any shape to see its source.</p>
       </div>
-      <h3 class="grp"><span class="pub-chip" style="color:#1f5f8b;border-color:#1f5f8b">Official data</span> Flood risk and farmland grade</h3>
+      <h3 class="grp"><span class="pub-chip" style="color:#1f5f8b;border-color:#1f5f8b">Official data</span> Flood, farmland, heritage and wildlife</h3>
       <div class="legend" id="legend-official">
         <label class="lrow"><input type="checkbox" data-ov="flood"><span class="sw" style="background:linear-gradient(90deg,#08519c 0 50%,#6baed6 50%);opacity:.75"></span><span class="lname">Flood Zones 3 (dark) and 2 (light), rivers and sea</span><span class="ht">EA</span></label>
         <label class="lrow"><input type="checkbox" data-ov="alc"><span class="sw" style="background:linear-gradient(90deg,#0a7cff 0 25%,#75dcff 25% 50%,#007a00 50% 75%,#a6f5a6 75%);opacity:.85"></span><span class="lname">Agricultural land grade (Predictive ALC, as used in the Scoping Report)</span><span class="ht">Defra</span></label>
+        <label class="lrow"><input type="checkbox" data-ov="sw"><span class="sw" style="background:linear-gradient(90deg,#4b4b9c 0 33%,#9e9ed8 33% 66%,#cfe3ff 66%);opacity:.85"></span><span class="lname">Surface water flood risk (heavy rain)</span><span class="ht">EA</span></label>
+        <label class="lrow"><input type="checkbox" data-ov="heritage"><span class="sw" style="background:#fff;border:2px dashed #6a3d9a;box-shadow:inset 0 0 0 3px #b2182b"></span><span class="lname">Heritage: listed buildings, scheduled monuments, parks, conservation areas</span><span class="ht">HE</span></label>
+        <label class="lrow"><input type="checkbox" data-ov="nature"><span class="sw" style="background:repeating-linear-gradient(135deg,#7570b3 0 3px,transparent 3px 7px);border:2px solid #7570b3"></span><span class="lname">International wildlife sites (SPA, SAC, Ramsar) and ancient woodland</span><span class="ht">NE</span></label>
+        <label class="lrow" id="row-sssi"><input type="checkbox" data-ov="sssi"><span class="sw" style="background:#26a69a;opacity:.6;border:2px solid #004d40"></span><span class="lname">Sites of Special Scientific Interest (SSSI)</span><span class="ht">NE</span></label>
       </div>
+      <div class="ovkey" id="key-sssi" hidden><span><i style="background:#26a69a;outline:2px solid #004d40"></i>SSSI: protected for wildlife or geology</span><small>Natural England SSSI boundaries. Islington Heronry SSSI is inside the site boundary; Setchey and Boughton Fen are within about 25 m of it. Tap a site for details and a link to its Natural England page.</small></div>
+      <div class="ovkey" id="key-sw" hidden><span><i style="background:#4b4b9c"></i>High: more than 3.3% chance each year</span><span><i style="background:#9e9ed8"></i>Medium: 1% to 3.3%</span><span><i style="background:#cfe3ff"></i>Low: 0.1% to 1%</span><small>Environment Agency Risk of Flooding from Surface Water (NaFRA2), loaded live from the Environment Agency. Zoom in close (street level) to see it; the service doesn't draw it when zoomed out.</small></div>
+      <div class="ovkey" id="key-heritage" hidden><span><i style="background:#67001f;border-radius:50%"></i>Listed building, Grade I</span><span><i style="background:#d6604d;border-radius:50%"></i>Listed building, Grade II*</span><span><i style="background:#f4a582;border-radius:50%"></i>Listed building, Grade II</span><span><i style="background:#8c510a"></i>Scheduled monument</span><span><i style="background:transparent;border:2px dashed #bf812d"></i>Registered park and garden</span><span><i style="background:transparent;border:2px dashed #6a3d9a"></i>Conservation area</span><small>Historic England National Heritage List and conservation areas, within 3 km of the site (the Scoping Report's study area).</small></div>
+      <div class="ovkey" id="key-nature" hidden><span><i style="background:#7570b3"></i>Special Protection Area (birds)</span><span><i style="background:#1b9e77"></i>Special Area of Conservation (habitats)</span><span><i style="background:transparent;border:2px solid #1f78b4"></i>Ramsar wetland</span><span><i style="background:#4d7c0f"></i>Ancient woodland (within 3 km)</span><small>Natural England designations. SPAs, SACs and Ramsar sites have the strongest legal protection; ancient woodland is "irreplaceable habitat" in national policy.</small></div>
       <div class="ovkey" id="key-flood" hidden><span><i style="background:#08519c"></i>Flood Zone 3: high probability (1% river / 0.5% sea or more each year)</span><span><i style="background:#6baed6"></i>Flood Zone 2: medium probability</span><small>Environment Agency Flood Map for Planning, updated 22 Oct 2026. Ignores flood defences. Not for individual properties.</small></div>
       <div class="ovkey" id="key-alc" hidden><span><i style="background:#0a7cff"></i>Grade 1 excellent (BMV)</span><span><i style="background:#75dcff"></i>Grade 2 very good (BMV)</span><span><i style="background:#007a00"></i>Grade 3a good (BMV)</span><span><i style="background:#a6f5a6"></i>Grade 3b moderate</span><span><i style="background:#ffff66"></i>Grade 4 poor</span><span><i style="background:#a5805f"></i>Grade 5 very poor</span><span><i style="background:#ffc35a"></i>Non-agricultural</span><span><i style="background:#ff6457"></i>Urban</span><small>Defra Predictive Agricultural Land Classification Map for England (2026), the map used in the Scoping Report, loaded live from Defra in its official colours. It's a prediction for strategic use; field surveys give the definitive grade. BMV = best and most versatile land.</small></div>
       <div class="btnrow">
         <button class="btn" id="showFlood">Flood zones</button>
         <button class="btn" id="showAlc">Farmland grades</button>
+        <button class="btn" id="showSssi">SSSIs</button>
+        <button class="btn" id="showHeritage">Heritage</button>
+        <button class="btn" id="showNature">Wildlife sites</button>
       </div>
       <h3 class="grp"><span class="pub-chip" style="color:#6b4fa0;border-color:#6b4fa0">Context</span> Other solar projects</h3>
       <div class="legend" id="legend-other"></div>
@@ -296,8 +320,8 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
         <details class="ground"><summary><b>Loss of prime farmland (best and most versatile land)</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
           <p><span class="lbl">The issue</span>Much of the site is predicted to be "best and most versatile" (BMV) farmland, which policy defines as Grades 1, 2 and 3a. The draft data centre policy says poorer-quality land should be used where possible.</p>
           <p><span class="lbl">What the documents say</span>Walpole substation land is all predicted Grade&nbsp;1. Most of the Western Site, where the data centre goes, is Grade&nbsp;2 and 3a, with some Grade&nbsp;1. The Eastern Cable Route is mostly Grade&nbsp;2 and 3a, with Grade&nbsp;1 east of the River Great Ouse. The Eastern Site is Grade&nbsp;2 and 3b in the west and mostly 3a in the east. These are <i>predictive</i> grades from a national map; the developer plans field soil surveys. The draft data centre policy says that if significant development of farmland is necessary, poorer land (3b, 4, 5) should be used where possible, and that the Secretary of State should ensure higher-quality land has been avoided where possible. The borough's Local Plan (Policy LP24, as quoted in the Scoping Report) says the council will seek to protect productive and BMV land, and that applications for other uses that would adversely affect it are likely to be refused unless the benefits outweigh its loss.</p>
-          <p><p><span class="lbl">Official map, measured</span>On Defra's Predictive ALC Map for England (the map the Scoping Report uses), about 87% of the land inside the site boundary is predicted to be BMV: roughly 9% Grade&nbsp;1, 38% Grade&nbsp;2 and 40% Grade&nbsp;3a, with 11% Grade&nbsp;3b. About 85% of the solar areas and all of the data centre zone are predicted BMV. These are this viewer's measurements of a predictive map, not field survey results. Turn on <i>Agricultural land grade</i> in the Map tab to see it.</p>
-          <span class="lbl">Developer's position</span>About 85% of land within 6.7&nbsp;km of Walpole substation, and about 95% within 20&nbsp;km, is BMV, so there is little alternative near the grid connection. After 60 years the solar land would be restored so it could return to farming.</p>
+          <p><span class="lbl">Official map, measured</span>On Defra's Predictive ALC Map for England (the map the Scoping Report uses), about 87% of the land inside the site boundary is predicted to be BMV: roughly 9% Grade&nbsp;1, 38% Grade&nbsp;2 and 40% Grade&nbsp;3a, with 11% Grade&nbsp;3b. About 85% of the solar areas and all of the data centre zone are predicted BMV. These are this viewer's measurements of a predictive map, not field survey results. Turn on <i>Agricultural land grade</i> in the Map tab to see it.</p>
+          <p><span class="lbl">Developer\'s position</span>About 85% of land within 6.7&nbsp;km of Walpole substation, and about 95% within 20&nbsp;km, is BMV, so there is little alternative near the grid connection. After 60 years the solar land would be restored so it could return to farming.</p>
           <p><span class="lbl">Points to raise</span>The data centre, Western substation and batteries, Walpole substation and Western overhead line are treated as permanent development, so no return to farming is proposed for that land. Ask for the field-survey results, the area of each grade under permanent and under temporary development, and evidence that poorer land was considered. National food security is also in scope: the developer has said it will assess it.</p>
           <p class="src">Scoping Report §14.4.5–14.4.6, §4.5.4, §5.6.4 (KL&amp;WN Local Plan Policy LP24); draft Data Centres NPS paras 362 and 379</p></div></details>
         <details class="ground"><summary><b>Site chosen because the land was available (land ownership)</b><span class="await-chip">Subject to clarification</span></summary><div class="gbody">
@@ -321,8 +345,9 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
         <details class="ground"><summary><b>Flood risk on the Western Site</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
           <p><span class="lbl">The issue</span>Most of the Western Site, where the data centre is proposed, is in the Environment Agency's highest tidal flood zone.</p>
           <p><span class="lbl">What the documents say</span>Most of the Western Site is in Flood Zone&nbsp;3 (tidal), with a small area of Zone&nbsp;2 at its southern end and one area of Zone&nbsp;1 near its centre. The Western Cable Route is entirely in Zones 2 and 3, and the Walpole land almost entirely. The draft data centre policy says the Secretary of State must be satisfied that the Sequential and Exception Tests have been applied where required.</p>
-          <p><p><span class="lbl">Official map, measured</span>On the Environment Agency's Flood Map for Planning (updated 22 October 2026), about 42% of the land inside the whole site boundary is in Flood Zone&nbsp;3, including almost all of the data centre zone and about 37% of the solar areas. Flood zones ignore defences. These are this viewer's measurements; turn on <i>Flood Zones</i> in the Map tab to see the map.</p>
-          <span class="lbl">Developer's position</span>Flood risk will be assessed with the Environment Agency, the Lead Local Flood Authority and the Internal Drainage Boards.</p>
+          <p><span class="lbl">Official map, measured</span>On the Environment Agency's Flood Map for Planning (updated 22 October 2026), about 42% of the land inside the whole site boundary is in Flood Zone&nbsp;3, including almost all of the data centre zone and about 37% of the solar areas. Flood zones ignore defences. These are this viewer's measurements; turn on <i>Flood Zones</i> in the Map tab to see the map.</p>
+          <p><span class="lbl">Developer\'s position</span>Flood risk will be assessed with the Environment Agency, the Lead Local Flood Authority and the Internal Drainage Boards.</p>
+          <p><span class="lbl">Surface water</span>Flood zones cover rivers and the sea only. Flooding from heavy rain is mapped separately in the Environment Agency's <i>Risk of Flooding from Surface Water</i>, which the Scoping Report lists as a data source. It shows rainfall flow paths and ponding across parts of the Eastern Site and around Fincham. Turn on <i>Surface water flood risk</i> in the Map tab and zoom in to see it.</p>
           <p><span class="lbl">Points to raise</span>Exactly where the data centre buildings sit in relation to the flood zones (including the Zone&nbsp;1 area), how the Sequential Test has been applied, and how the buildings would stay safe over their lifetime.</p>
           <p class="src">Scoping Report §13.4.52; draft Data Centres NPS para 312</p></div></details>
         <details class="ground"><summary><b>Landscape and new overhead lines</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
@@ -334,15 +359,32 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
         <details class="ground"><summary><b>Heritage settings</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
           <p><span class="lbl">The issue</span>The scheme is close to designated heritage assets.</p>
           <p><span class="lbl">What the documents say</span>Stradsett Hall Registered Park and Garden (Grade&nbsp;II) is about 0.1&nbsp;km west of the site. The underground cable section is intended to avoid it and the Grade&nbsp;I Church of St Botolph. The developer expects 11 scheduled monuments, 9 Grade&nbsp;I and 11 Grade&nbsp;II* listed buildings, Fincham Conservation Area and Stradsett Hall park to go forward for detailed assessment. Scheduled monuments near the site include the bowl barrow known as The Mound, about 200&nbsp;m south of it.</p>
-          <p><span class="lbl">Developer's position</span>There are no designated assets within the site. Underground cabling, setbacks and screening reduce effects on their settings.</p>
+          <p><span class="lbl">Official map, measured</span>On Historic England's records there are about 76 listed buildings within 1&nbsp;km of the site boundary, including 6 Grade&nbsp;I and 8 Grade&nbsp;II*, and about 243 within 3&nbsp;km. The nearest are Grade&nbsp;II buildings at Playters Hall and Grays Hall, about 15–25&nbsp;m away. Fincham Hall (Grade&nbsp;II*) is about 100&nbsp;m from the site, and the Grade&nbsp;I Church of St Martin, Fincham, about 290&nbsp;m. The scheduled moated site and garden remains at Aylmer Hall touch the site boundary on the Western Site, and the Barton Bendish medieval settlement remains are about 140&nbsp;m away. Fincham Conservation Area touches the boundary, and Shouldham Thorpe's is about 150&nbsp;m away. These are this viewer's measurements; turn on <i>Heritage</i> in the Map tab and tap any marker.</p>
+          <p><span class="lbl">Why it matters</span>Listed buildings, scheduled monuments, registered parks and conservation areas are protected by law and national policy, and harm to their <i>setting</i> (how they are experienced in their surroundings) is a material planning consideration even when nothing is built on them. Great weight must be given to their conservation, and the more important the asset, the greater the weight.</p>
+          <p><span class="lbl">Developer's position</span>There are no designated assets within the site. The Aylmer Hall scheduled monument has been kept outside the boundary, and related earthworks under an existing farm track would be left in place. Underground cabling, setbacks and screening reduce effects on their settings.</p>
           <p><span class="lbl">Points to raise</span>Effects on the setting of these assets, and on undesignated heritage and archaeology. An archaeology strategy is promised.</p>
-          <p class="src">Scoping Report §4.4.48, §10.3.13, §11.6.23; Leaflet p9, p19</p></div></details>
+          <p class="src">Scoping Report §4.4.48, §10.3.10–10.3.13, §11.5.2–11.5.3, §11.6.23; Leaflet p9, p19; Historic England National Heritage List (measured)</p></div></details>
         <details class="ground"><summary><b>Wildlife: Islington Heronry SSSI</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
           <p><span class="lbl">The issue</span>A Site of Special Scientific Interest lies <b>inside</b> the Western Site boundary.</p>
           <p><span class="lbl">What the documents say</span>Islington Heronry SSSI is within the site, with a minimum 100&nbsp;m buffer to above-ground infrastructure.</p>
+          <p><span class="lbl">Other SSSIs nearby</span>The Scoping Report lists Setchey SSSI (about 10&nbsp;m from the site, geological), Boughton Fen SSSI (about 25&nbsp;m, across Oxborough Road), River Nar SSSI (about 0.5&nbsp;km), Wiggenhall St Germans SSSI (about 0.6&nbsp;km, geological) and Breckland Farmland SSSI (about 2.6&nbsp;km, stone curlew). Turn on <i>SSSIs</i> in the Map tab to see them.</p>
           <p><span class="lbl">Developer's position</span>There will be no direct loss of the SSSI, and the scheme will seek to deliver a significant biodiversity net gain.</p>
           <p><span class="lbl">Points to raise</span>Whether a 100&nbsp;m buffer is enough to protect the heronry from construction disturbance, operational noise and lighting.</p>
           <p class="src">Scoping Report §4.2.1, §9.6.7, §10.3.17; Leaflet p10</p></div></details>
+        <details class="ground"><summary><b>Wildlife: protected sites of international importance</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
+          <p><span class="lbl">The issue</span>The scheme is within a few kilometres of wildlife sites protected under the Habitats Regulations, the strongest protection in UK law.</p>
+          <p><span class="lbl">What the documents say</span>The Breckland Special Protection Area is about 2.1&nbsp;km from the site at its closest point, designated for breeding stone curlew, nightjar and woodlark. The Norfolk Valley Fens Special Area of Conservation is about 2.6&nbsp;km away. Winter bird surveys looked for species from Breckland and The Wash SPAs that may feed or roost on the arable fields. A Habitats Regulations Assessment will be coordinated with the environmental assessment.</p>
+          <p><span class="lbl">Official map, measured</span>On Natural England's maps, Breckland SPA is about 2.1&nbsp;km away, Norfolk Valley Fens SAC about 2.6&nbsp;km, and The Wash (SPA, SAC and Ramsar site) about 7&nbsp;km. Turn on <i>Wildlife sites</i> in the Map tab to see them.</p>
+          <p><span class="lbl">Why it matters</span>A project that could significantly affect these sites, including through birds that use farmland outside the boundaries ("functionally linked land"), can only go ahead if a Habitats Regulations Assessment shows it won't harm the site's integrity, or in tightly defined exceptional circumstances.</p>
+          <p><span class="lbl">Points to raise</span>The survey results for stone curlew and other SPA birds on and near the fields, whether any of the land is functionally linked to the SPAs, and how lighting, noise and construction would be controlled.</p>
+          <p class="src">Scoping Report §2.8.1, §9.4.14, Table 9-3, §10.3.15–10.3.16; Natural England designated sites (measured)</p></div></details>
+        <details class="ground"><summary><b>Ancient woodland next to the site</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
+          <p><span class="lbl">The issue</span>Birch Wood, ancient semi-natural woodland of about 3&nbsp;ha, sits right on the Eastern Site boundary.</p>
+          <p><span class="lbl">What the documents say</span>There is no ancient woodland within the site. The closest is Birch Wood, adjacent to the site boundary in the Eastern Site.</p>
+          <p><span class="lbl">Official map, measured</span>On Natural England's Ancient Woodland Inventory, Birch Wood's edge meets the boundary and one of the published solar areas. Several other ancient woods are within 3&nbsp;km, the nearest (Kippers Wood and Bowl Wood) about 0.7&nbsp;km away.</p>
+          <p><span class="lbl">Why it matters</span>National policy treats ancient woodland as irreplaceable: development that would lose or damage it should be refused unless there are wholly exceptional reasons. Natural England and the Forestry Commission's standing advice is to keep a buffer of at least 15&nbsp;m, and more where effects such as lighting or drainage changes reach further.</p>
+          <p><span class="lbl">Points to raise</span>What buffer will be kept between Birch Wood and the panels, fencing, tracks and lighting, and how its drainage and root zone will be protected during construction.</p>
+          <p class="src">Scoping Report §9.4.20; Natural England Ancient Woodland Inventory (measured); NPPF; Natural England and Forestry Commission standing advice on ancient woodland</p></div></details>
         <details class="ground"><summary><b>Noise, lighting and air quality</b><span class="doc-chip">In the documents</span></summary><div class="gbody">
           <p><span class="lbl">The issue</span>Data centres operate continuously and include cooling infrastructure, backup generators and security lighting.</p>
           <p><span class="lbl">What the documents say</span>Backup generators will be assessed as diesel, the worst case. The data centre will need extra CCTV, security and external lighting. High-voltage areas, including substations and batteries, will have lighting but will not be permanently lit.</p>
@@ -435,6 +477,7 @@ SW1A 2EG</div></dd>
 
       <h2>Writing a useful letter</h2>
       <ul class="plain">
+        <li><b>Letter writer:</b> enter your postcode in the Near me tab and press <i>Write a response letter</i> for a draft built from your location and your own words.</li>
         <li>Put the project name and reference at the top: <b>Longmarsh Green Energy (EN0110048)</b>.</li>
         <li>Give your name and postcode so your comments can be linked to a place.</li>
         <li>Be specific about where. The <b>Near me</b> tab gives your distance to each part of the scheme.</li>
@@ -464,11 +507,19 @@ SW1A 2EG</div></dd>
         <a class="doc" href="https://national-infrastructure-consenting.planninginspectorate.gov.uk/projects/EN0110048/download-boundary" target="_blank" rel="noopener"><b>Official site boundary (GeoJSON)</b><span>JSON</span><small>The order limits shown on this map as the red boundary.</small></a>
         <a class="doc" href="https://national-infrastructure-consenting.planninginspectorate.gov.uk/decision-making-process-guide" target="_blank" rel="noopener"><b>How the NSIP process works</b><span>web</span><small>The Planning Inspectorate's guide to each stage.</small></a>
       </div>
-      <h2>Official flood and farmland data</h2>
+      <h2>Official flood, farmland and SSSI data</h2>
       <div class="doclist">
         <a class="doc" href="https://flood-map-for-planning.service.gov.uk/" target="_blank" rel="noopener"><b>Flood Map for Planning (GOV.UK)</b><span>web</span><small>Check the flood zone of any location and get an official flood map.</small></a>
         <a class="doc" href="https://www.data.gov.uk/dataset/104434b0-5263-4c90-9b1e-e43b1d57c750/flood-map-for-planning-flood-zones1" target="_blank" rel="noopener"><b>Flood Map for Planning – Flood Zones (data)</b><span>data</span><small>Environment Agency dataset shown on this map. Open Government Licence.</small></a>
+        <a class="doc" href="https://designatedsites.naturalengland.org.uk/SiteDetail.aspx?SiteCode=S1000618" target="_blank" rel="noopener"><b>Islington Heronry SSSI (Natural England)</b><span>web</span><small>Citation, condition and management for the SSSI inside the site.</small></a>
         <a class="doc" href="https://www.data.gov.uk/dataset/fb7463b9-0e37-4d68-bb70-bbf658f1c5dc/predictive-agricultural-land-classification-map-for-england" target="_blank" rel="noopener"><b>Predictive Agricultural Land Classification Map for England (data)</b><span>data</span><small>Defra, 2026. The map used in the Scoping Report and shown on this map. Open Government Licence.</small></a>
+      </div>
+      <h2>Official heritage and wildlife data</h2>
+      <div class="doclist">
+        <a class="doc" href="https://historicengland.org.uk/listing/the-list/" target="_blank" rel="noopener"><b>National Heritage List for England (Historic England)</b><span>web</span><small>Search listed buildings, scheduled monuments and registered parks. Each marker on the map links to its entry.</small></a>
+        <a class="doc" href="https://designatedsites.naturalengland.org.uk/" target="_blank" rel="noopener"><b>Natural England Designated Sites View</b><span>web</span><small>Citations and condition for SSSIs, SPAs, SACs and Ramsar sites.</small></a>
+        <a class="doc" href="https://www.gov.uk/guidance/ancient-woodland-ancient-trees-and-veteran-trees-advice-for-making-planning-decisions" target="_blank" rel="noopener"><b>Ancient woodland: standing advice for planning decisions</b><span>web</span><small>Natural England and Forestry Commission guidance, including buffer zones.</small></a>
+        <a class="doc" href="https://check-long-term-flood-risk.service.gov.uk/" target="_blank" rel="noopener"><b>Check your long-term flood risk (GOV.UK)</b><span>web</span><small>Surface water, river and sea flood risk for any postcode.</small></a>
       </div>
       <h2>Other solar projects nearby</h2>
       <div class="doclist">
@@ -502,8 +553,9 @@ SW1A 2EG</div></dd>
       <p><b>Based on newly published documents.</b> The information comes from documents published in October 2026, early in the consultation. It may contain errors or omissions, and the scheme and documents will change. Sources were last checked on 29 October 2026.</p>
       <ul class="plain">
         <li>Map shapes are traced from the developer's indicative plans and are approximate. Anything marked <b>awaiting information</b> is a presumption made for this viewer, not part of the proposals.</li>
-        <li>The flood zone and farmland grade layers are official Environment Agency and Defra data (the flood zones simplified for display), shown for context. Flood zones ignore flood defences, and the farmland grades are Defra's predictive map, loaded live from Defra. Use the official services for any specific site.</li>
+        <li>The flood, farmland, heritage and wildlife layers are official Environment Agency, Defra, Historic England and Natural England data (some simplified for display), shown for context. Flood zones ignore flood defences, and the farmland grades are Defra's predictive map, loaded live from Defra. Use the official services for any specific site.</li>
         <li>Distances are approximate straight-line measurements. Do not rely on them for property, legal or financial decisions.</li>
+        <li>The letter writer is a work in progress. It produces a draft only: check every point against the original documents and edit it as you see fit before sending it in your own name. What you send is your own response. Nothing you type into it is stored or sent anywhere by this site.</li>
         <li>The Objections and Respond tabs summarise published documents and policy to help people take part. They are not legal, planning or other professional advice, and they do not represent the views of any organisation.</li>
       </ul>
       <p><b>Please check everything against the original documents</b> (linked in the Documents tab) before you rely on it or quote it, and seek professional advice about your own circumstances. To the extent permitted by law, no responsibility is accepted for any loss, or any decision made, as a result of using this viewer.</p>
@@ -563,6 +615,37 @@ SW1A 2EG</div></dd>
   </div>
 </aside>
 <div class="toast" id="toast" hidden></div>
+<div id="letterDlg" class="dlg" hidden role="dialog" aria-modal="true" aria-labelledby="lt-h">
+  <div class="dlg-card">
+    <button class="dlg-x" id="lt-close" aria-label="Close">×</button>
+    <h2 id="lt-h">Write your response letter <span class="await-chip">Work in progress</span></h2>
+    <div class="awaitbox"><p><b>This letter writer is a work in progress.</b> It produces a <b>draft only</b>. Please read the whole letter carefully before you send it, check every fact and reference against the original documents, and edit it as you see fit, removing anything you don't agree with or can't confirm. Once sent, it is your own response, in your own name. It is not legal or planning advice, and no responsibility is accepted for its content.</p></div>
+    <p class="note"><b>Make it yours.</b> Letters carry weight when they are specific, local and in the writer's own words. Near-identical letters are often grouped and summarised as one campaign response. This tool drafts a letter from your location and the concerns you choose, but the sentences you add yourself matter most. Check every point, change anything you don't agree with, and only send what you believe. It is not legal advice.</p>
+    <p class="lt-where" id="lt-where"></p>
+    <h3>1. Your concerns</h3>
+    <p class="note">Pre-ticked from what is near you. Fewer, well-made points beat a long list.</p>
+    <div class="legend" id="lt-grounds"></div>
+    <h3>2. In your own words <span class="await-chip">important</span></h3>
+    <label class="lt-lab" for="lt-mine">How you know this area: how long you've lived here, how you use the land, lanes and footpaths</label>
+    <textarea id="lt-mine" rows="3" placeholder="e.g. I have lived on ... for 18 years and walk the footpath from ... to ... most days."></textarea>
+    <label class="lt-lab" for="lt-effect">What would change for you: what you would see, hear or lose</label>
+    <textarea id="lt-effect" rows="3" placeholder="e.g. From our back garden we look south across the fields that would be covered in panels..."></textarea>
+    <label class="lt-lab" for="lt-extra">Anything else (optional)</label>
+    <textarea id="lt-extra" rows="2"></textarea>
+    <h3>3. Your details</h3>
+    <div class="lt-row"><label class="lt-lab">Name (optional, or leave blank to write it by hand)<input id="lt-name" autocomplete="name"></label><label class="lt-lab">Postcode<input id="lt-pc" autocomplete="postal-code"></label></div>
+    <p class="note">Your address is left as blank lines to fill in by hand. Nothing you type here leaves your browser.</p>
+    <div class="btnrow"><button class="btn primary" id="lt-make">Draft my letter</button></div>
+    <div id="lt-step2" hidden>
+      <h3>4. Check and edit</h3>
+      <p class="note"><span class="await-chip">Draft</span> Read it through, check it and edit it as you see fit before you print or send it.</p>
+      <textarea id="lt-out" rows="22" spellcheck="true"></textarea>
+      <div class="btnrow"><button class="btn primary" id="lt-print">Print or save as PDF</button><button class="btn" id="lt-copy">Copy text</button><button class="btn" id="lt-again">Redraft</button></div>
+      <p class="note"><b>Sending it:</b> sign it and post it to <b>Freepost LONGMARSH GREEN ENERGY</b> (no stamp needed) by <b>11.59pm on 26 November 2026</b>, or paste it into an email to <b>info@longmarshgreenenergy.co.uk</b>. Keep a copy: you can use it again when you register with the Planning Inspectorate after the application is accepted. Points about farmland and how data centres are approved can also go to the government's data centre policy consultation (closes 8 January 2027), see the Respond tab.</p>
+    </div>
+  </div>
+</div>
+
 <script>
 /* status: 'pub' = published by the applicant (shape + parameter); 'await' = presumption awaiting information */
 const LAYERS=[
@@ -656,7 +739,7 @@ function hatchImage(hex){
 
 async function loadData(){
   if(window.LM_DATA&&window.LM_VILL)return [window.LM_DATA,window.LM_VILL];
-  return Promise.all([fetch("data/longmarsh.geojson?v=20261030b").then(r=>r.json()),fetch("data/villages.json?v=20261030b").then(r=>r.json())]);
+  return Promise.all([fetch("data/longmarsh.geojson?v=20261031").then(r=>r.json()),fetch("data/villages.json?v=20261031").then(r=>r.json())]);
 }
 
 map.on('load',async()=>{
@@ -695,30 +778,63 @@ map.on('load',async()=>{
 });
 
 /* ---------- official overlays: EA flood zones (hosted copy) and Defra Predictive ALC (live WMS) ---------- */
-const DV='20261030b';
+const DV='20261031';
 const OV={
   flood:{url:'data/flood-zones.geojson?v='+DV,attr:'Flood zones: contains Environment Agency information © Environment Agency and/or database right 2026 (OGL)',loaded:false},
+  heritage:{url:'data/heritage.geojson?v='+DV,attr:'Heritage: © Historic England 2026. Contains Ordnance Survey data © Crown copyright and database right 2026 (OGL)',loaded:false},
+  nature:{url:'data/nature.geojson?v='+DV,attr:'SPA, SAC, Ramsar and ancient woodland: © Natural England copyright. Contains Ordnance Survey data © Crown copyright and database right (OGL)',loaded:false},
+  sw:{attr:'Surface water: contains Environment Agency information © Environment Agency and/or database right (OGL)',loaded:true},
+  sssi:{url:'data/sssi.geojson?v='+DV,attr:'SSSIs: © Natural England copyright. Contains Ordnance Survey data © Crown copyright and database right (OGL)',loaded:false},
   alc:{attr:'Farmland grade: Predictive ALC Map for England © Defra copyright and/or database right (OGL)',loaded:true}};
 const ALC_WMS='https://environment.data.gov.uk/spatialdata/predictive-alc-england-raster/wms?service=WMS&version=1.3.0&request=GetMap&layers=Predictive_ALC_England_Raster&styles=&format=image/png&transparent=true&crs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}';
 const ALC_GFI='https://environment.data.gov.uk/spatialdata/predictive-alc-england/wms?service=WMS&version=1.3.0&request=GetFeatureInfo&layers=Predictive_ALC_England&query_layers=Predictive_ALC_England&styles=&format=image/png&info_format=application/json&crs=EPSG:3857&width=3&height=3&i=1&j=1&bbox=';
+const SW_WMS='https://environment.data.gov.uk/spatialdata/nafra2-risk-of-flooding-from-surface-water/wms?service=WMS&version=1.3.0&request=GetMap&layers=rofsw&styles=&format=image/png&transparent=true&crs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}';
 const ALC_NAME={'1':'Grade 1 (excellent)','2':'Grade 2 (very good)','3a':'Grade 3a (good)','3b':'Grade 3b (moderate)','4':'Grade 4 (poor)','5':'Grade 5 (very poor)','NA':'Non-agricultural','U':'Urban'};
 function addOfficialLayers(){
   const empty={type:'FeatureCollection',features:[]};
   map.addSource('alc',{type:'raster',tiles:[ALC_WMS],tileSize:256,attribution:OV.alc.attr});
   map.addSource('flood',{type:'geojson',data:empty,attribution:OV.flood.attr});
+  map.addSource('sssi',{type:'geojson',data:empty,attribution:OV.sssi.attr});
+  map.addSource('sssi-pt',{type:'geojson',data:empty});
+  map.addSource('sw',{type:'raster',tiles:[SW_WMS],tileSize:256,minzoom:12,attribution:OV.sw.attr});
+  map.addSource('heritage',{type:'geojson',data:empty,attribution:OV.heritage.attr});
+  map.addSource('nature',{type:'geojson',data:empty,attribution:OV.nature.attr});
+  map.addSource('sssi-lb',{type:'geojson',data:empty});
   const below=map.getLayer('flat')?'flat':undefined;
   map.addLayer({id:'alc-fill',type:'raster',source:'alc',layout:{visibility:'none'},paint:{'raster-opacity':0.62,'raster-resampling':'nearest'}},below);
   map.addLayer({id:'flood-fill',type:'fill',source:'flood',layout:{visibility:'none'},paint:{'fill-color':['match',['get','flood_zone'],'FZ3','#08519c','#6baed6'],'fill-opacity':['match',['get','flood_zone'],'FZ3',0.42,0.5]}},below);
   map.addLayer({id:'flood-line',type:'line',source:'flood',layout:{visibility:'none'},paint:{'line-color':'#08306b','line-width':0.7,'line-opacity':0.5}},below);
+  map.addLayer({id:'sw-fill',type:'raster',source:'sw',minzoom:12,layout:{visibility:'none'},paint:{'raster-opacity':0.85}},below);
+  const K=k=>['==',['get','kind'],k];
+  map.addLayer({id:'nat-fill',type:'fill',source:'nature',filter:['in',['get','kind'],['literal',['spa','sac']]],layout:{visibility:'none'},paint:{'fill-color':['match',['get','kind'],'spa','#7570b3','#1b9e77'],'fill-opacity':0.3}});
+  map.addLayer({id:'nat-line',type:'line',source:'nature',filter:['in',['get','kind'],['literal',['spa','sac','ramsar']]],layout:{visibility:'none'},paint:{'line-color':['match',['get','kind'],'spa','#4a4590','sac','#0f6b51','#1f78b4'],'line-width':['match',['get','kind'],'ramsar',2.5,1.5]}});
+  map.addLayer({id:'aw-fill',type:'fill',source:'nature',filter:K('aw'),layout:{visibility:'none'},paint:{'fill-color':'#4d7c0f','fill-opacity':0.75}});
+  map.addLayer({id:'ca-fill',type:'fill',source:'heritage',filter:K('ca'),layout:{visibility:'none'},paint:{'fill-color':'#6a3d9a','fill-opacity':0.1}});
+  map.addLayer({id:'ca-line',type:'line',source:'heritage',filter:K('ca'),layout:{visibility:'none'},paint:{'line-color':'#6a3d9a','line-width':2,'line-dasharray':[2,1.5]}});
+  map.addLayer({id:'pg-line',type:'line',source:'heritage',filter:K('pg'),layout:{visibility:'none'},paint:{'line-color':'#bf812d','line-width':2.4,'line-dasharray':[1,1.2]}});
+  map.addLayer({id:'pg-fill',type:'fill',source:'heritage',filter:K('pg'),layout:{visibility:'none'},paint:{'fill-color':'#bf812d','fill-opacity':0.12}});
+  map.addLayer({id:'sm-fill',type:'fill',source:'heritage',filter:K('sm'),layout:{visibility:'none'},paint:{'fill-color':'#8c510a','fill-opacity':0.6}});
+  map.addLayer({id:'sm-line',type:'line',source:'heritage',filter:K('sm'),layout:{visibility:'none'},paint:{'line-color':'#543005','line-width':1.5}});
+  map.addLayer({id:'lb-pt',type:'circle',source:'heritage',filter:K('lb'),layout:{visibility:'none'},paint:{'circle-radius':['interpolate',['linear'],['zoom'],9,['match',['get','grade'],'I',4.5,'II*',3.5,2.2],15,['match',['get','grade'],'I',9,'II*',7,5]],'circle-color':['match',['get','grade'],'I','#67001f','II*','#d6604d','#f4a582'],'circle-stroke-color':'#ffffff','circle-stroke-width':1}});
+  map.addLayer({id:'sssi-fill',type:'fill',source:'sssi',layout:{visibility:'none'},paint:{'fill-color':'#26a69a','fill-opacity':0.45}});
+  map.addLayer({id:'sssi-line',type:'line',source:'sssi',layout:{visibility:'none'},paint:{'line-color':'#004d40','line-width':['interpolate',['linear'],['zoom'],9,1.2,15,3]}});
+  map.addLayer({id:'sssi-pt',type:'circle',source:'sssi-pt',maxzoom:13,layout:{visibility:'none'},paint:{'circle-radius':['case',['<',['get','dist_m'],3000],6,4],'circle-color':'#26a69a','circle-stroke-color':'#004d40','circle-stroke-width':2}});
+  map.addLayer({id:'sssi-lbl',type:'symbol',source:'sssi-lb',filter:['<',['get','dist_m'],3000],layout:{visibility:'none','text-field':['get','name'],'text-font':['Open Sans Semibold'],'text-size':12,'text-offset':[0,1.1],'text-anchor':'top'},paint:{'text-color':'#00332b','text-halo-color':'#ffffff','text-halo-width':1.8}});
 }
 async function setOverlay(name,on){
   const o=OV[name];
   if(on&&!o.loaded){
-    try{toast('Loading Environment Agency flood zones…');
-      const d=await fetch(o.url).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});map.getSource(name).setData(d);o.loaded=true}
+    try{toast({flood:'Loading Environment Agency flood zones…',sssi:'Loading Natural England SSSIs…',heritage:'Loading Historic England heritage data…',nature:'Loading Natural England wildlife sites…'}[name]||'Loading…');
+      const d=await fetch(o.url).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});map.getSource(name).setData(d);o.loaded=true;
+      if(name==='sssi'){const pts=d.features.map(f=>{let best=null,ba=-1;const polys=f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.coordinates;
+          for(const p of polys){const r=p[0];let a=0,cx=0,cy=0;for(let i=0;i<r.length-1;i++){const c=r[i][0]*r[i+1][1]-r[i+1][0]*r[i][1];a+=c;cx+=(r[i][0]+r[i+1][0])*c;cy+=(r[i][1]+r[i+1][1])*c}
+            if(Math.abs(a)>ba&&a!==0){ba=Math.abs(a);best=[cx/(3*a),cy/(3*a)]}}
+          return best&&{type:'Feature',properties:f.properties,geometry:{type:'Point',coordinates:best}}}).filter(Boolean);
+        map.getSource('sssi-pt').setData({type:'FeatureCollection',features:pts});map.getSource('sssi-lb').setData({type:'FeatureCollection',features:pts})}}
     catch(err){toast('Could not load this layer. If you opened the file directly, use the online viewer.');const i=document.querySelector(`[data-ov="${name}"]`);if(i)i.checked=false;return}
   }
-  const ids=name==='flood'?['flood-fill','flood-line']:['alc-fill'];
+  const IDS={flood:['flood-fill','flood-line'],sssi:['sssi-fill','sssi-line','sssi-pt','sssi-lbl'],alc:['alc-fill'],sw:['sw-fill'],heritage:['ca-fill','ca-line','pg-fill','pg-line','sm-fill','sm-line','lb-pt'],nature:['nat-fill','nat-line','aw-fill']};
+  const ids=IDS[name];
   ids.forEach(id=>map.setLayoutProperty(id,'visibility',on?'visible':'none'));
   const i=document.querySelector(`[data-ov="${name}"]`);if(i)i.checked=on;
   const k=document.getElementById('key-'+name);if(k)k.hidden=!on;
@@ -787,8 +903,9 @@ const earthLink=(lat,lon,h)=>`https://earth.google.com/web/@${lat.toFixed(6)},${
 const osmLink=(lat,lon)=>`https://www.openstreetmap.org/?mlat=${lat.toFixed(5)}&mlon=${lon.toFixed(5)}#map=16/${lat.toFixed(5)}/${lon.toFixed(5)}`;
 function nearestBuilt(pt){return Object.values(TARGETS).filter(t=>t!==TARGETS.site).map(t=>({t,...nearest(pt,t)})).sort((a,b)=>a.d-b.d)[0]}
 
-function report(lon,lat,title){
+function report(lon,lat,title,postcode){
   if(!DATA)return;
+  LASTLOC={lon,lat,title,postcode:postcode||(/^[A-Z]{1,2}\d/.test(title)?title:'')};
   const pt=P(lon,lat);
   const rows=Object.values(TARGETS).map(t=>({t,...nearest(pt,t)}));
   const nb=nearestBuilt(pt);const head=nb.d===0?0:bearing(pt,nb.q);
@@ -803,8 +920,11 @@ function report(lon,lat,title){
      <a class="btn primary" target="_blank" rel="noopener" href="${svLink(lat,lon,head)}">Street View facing it</a>
      <button class="btn" id="stand">Stand here in 3D</button>
    </div>
+   <div class="btnrow"><button class="btn primary" id="writeLetter">✉ Write a response letter</button><span class="await-chip" style="align-self:center">Work in progress</span></div>
+   <p class="note">Builds a draft letter from this location, the concerns you choose and your own words. Work in progress: always check and edit the draft before sending it.</p>
    <p class="note">Street View shows today's view, not the proposals.</p>`;
   $('#stand').onclick=()=>standAt(lon,lat,head);
+  $('#writeLetter').onclick=openLetter;
   showTab('home');
 }
 function flyTo2D(lon,lat,nb){
@@ -836,10 +956,28 @@ function layerInfo(kind){
   return LAYERS.find(l=>l.k===kind);
 }
 map.on('click',e=>{
+  if(map.getLayer('sssi-fill')&&map.getLayoutProperty('sssi-fill','visibility')==='visible'){
+    const ss=map.queryRenderedFeatures([[e.point.x-6,e.point.y-6],[e.point.x+6,e.point.y+6]],{layers:['sssi-pt','sssi-fill']})[0];
+    if(ss){const p=ss.properties,d=+p.dist_m;
+      popup.setLngLat(e.lngLat).setHTML(`<b>${esc(p.name)}</b><div><span class="pub-chip" style="color:#004d40;border-color:#004d40">Site of Special Scientific Interest</span></div><p>${d<5?'Inside the site boundary.':'About '+(d<1000?Math.round(d/5)*5+' m':(d/1000).toFixed(1)+' km')+' from the site boundary (measured on this map).'}</p>${p.note?`<p>${esc(p.note)}</p>`:''}<p><a href="https://designatedsites.naturalengland.org.uk/SiteDetail.aspx?SiteCode=S${esc(p.url)}" target="_blank" rel="noopener">Natural England site page: citation and condition</a></p><p class="src">Natural England, SSSI (England) boundaries.</p>`).addTo(map);
+      report(e.lngLat.lng,e.lngLat.lat,p.name);return}
+  }
   const of=map.getLayer('other-fill')&&map.getLayoutProperty('other-fill','visibility')==='visible'?map.queryRenderedFeatures(e.point,{layers:['other-fill']})[0]:null;
   if(of){const o=OTHER[of.properties.ref];
     popup.setLngLat(e.lngLat).setHTML(`<b>${esc(o.name)}</b><div><span class="pub-chip" style="color:#6b4fa0;border-color:#6b4fa0">Separate project</span></div><p>${esc(o.facts)}</p><p>Order limits about ${of.properties.area_ha.toLocaleString()} ha (measured from the boundary file). This is a separate NSIP, not part of Longmarsh.</p><p><a href="https://national-infrastructure-consenting.planninginspectorate.gov.uk/projects/${of.properties.ref}" target="_blank" rel="noopener">Planning Inspectorate page (${of.properties.ref})</a></p><p class="src">Boundary: Planning Inspectorate project boundary file, downloaded 29 Oct 2026.</p>`).addTo(map);
     return}
+  {const vis=id=>map.getLayer(id)&&map.getLayoutProperty(id,'visibility')==='visible';
+   const bx=[[e.point.x-5,e.point.y-5],[e.point.x+5,e.point.y+5]];
+   const L=['lb-pt','sm-fill','aw-fill','pg-fill','ca-fill','nat-fill','nat-line'].filter(vis);
+   const o=L.length?map.queryRenderedFeatures(bx,{layers:L})[0]:null;
+   if(o){const p=o.properties,k=p.kind,d=+p.dist_m;
+     const dist=d<5?(k==='ca'||k==='aw'||k==='sm'?'Touches the site boundary.':'Inside or touching the site boundary.'):'About '+(d<1000?Math.round(d/5)*5+' m':(d/1000).toFixed(1)+' km')+' from the site boundary'+(p.dist_solar_m!=null&&+p.dist_solar_m<2000?', and about '+(+p.dist_solar_m<1000?Math.round(+p.dist_solar_m/5)*5+' m':(+p.dist_solar_m/1000).toFixed(1)+' km')+' from the nearest solar area':'')+' (measured on this map).';
+     const T={lb:`Listed building, Grade ${esc(p.grade)}`,sm:'Scheduled monument',pg:`Registered park and garden, Grade ${esc(p.grade||'')}`,ca:'Conservation area',aw:esc(p.type||'Ancient woodland'),spa:'Special Protection Area (birds)',sac:'Special Area of Conservation',ramsar:'Ramsar wetland of international importance'}[k];
+     const W={lb:'Listed buildings are protected by law. Planning decisions must give great weight to conserving them, including their setting.',sm:'Nationally important archaeology, protected by law. Harm to its setting is a planning consideration.',pg:'A designed landscape of special historic interest. Its setting is a planning consideration.',ca:'An area of special architectural or historic interest. Planning decisions consider its character and setting.',aw:'Irreplaceable habitat. National policy says development that would lose or damage it should be refused unless there are wholly exceptional reasons, and Natural England advises a buffer of at least 15 m.',spa:'Protected under the Habitats Regulations. A plan or project that could affect it needs a Habitats Regulations Assessment.',sac:'Protected under the Habitats Regulations. A plan or project that could affect it needs a Habitats Regulations Assessment.',ramsar:'Protected as a matter of government policy in the same way as SPAs and SACs.'}[k];
+     const link=(k==='lb'||k==='sm'||k==='pg')&&p.entry?`<p><a href="https://historicengland.org.uk/listing/the-list/list-entry/${esc(String(p.entry))}" target="_blank" rel="noopener">Historic England list entry ${esc(String(p.entry))}</a></p>`:'';
+     const src=(k==='lb'||k==='sm'||k==='pg'||k==='ca')?'Historic England, National Heritage List for England and Conservation Areas dataset.':'Natural England designated sites and Ancient Woodland Inventory.';
+     popup.setLngLat(e.lngLat).setHTML(`<b>${esc(p.name||'')}</b><div><span class="pub-chip" style="color:#1f5f8b;border-color:#1f5f8b">${T}</span></div><p>${dist}</p><p>${W}</p>${link}<p class="src">${src}</p>`).addTo(map);
+     report(e.lngLat.lng,e.lngLat.lat,p.name||T);return}}
   const f=map.queryRenderedFeatures(e.point,{layers:['tower','env','env-solar','env-solar-far','flat','ohl_line','boundary','buffer300'].filter(id=>map.getLayer(id))})[0];
   if(f){
     let L=layerInfo(f.properties.kind);
@@ -868,6 +1006,144 @@ map.on('click',e=>{
 });
 ['env','env-solar','env-solar-far','flat','tower'].forEach(id=>{map.on('mouseenter',id,()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave',id,()=>map.getCanvas().style.cursor='')});
 
+/* ---------- letter writer: a personal, policy-based response built from the reader's own location and words ---------- */
+let LASTLOC=null;
+const LDATA={};
+async function ldata(name,url){if(LDATA[name])return LDATA[name];try{LDATA[name]=await fetch(url).then(r=>r.json())}catch(_){LDATA[name]={features:[]}}return LDATA[name]}
+function inGeo(pt,g){const polys=g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];
+  for(const p of polys){const rs=p.map(r=>r.map(c=>P(c[0],c[1])));if(inRing(pt,rs[0])&&!rs.slice(1).some(h=>inRing(pt,h)))return true}return false}
+function distGeo(pt,g){if(g.type==='Point'){const q=P(g.coordinates[0],g.coordinates[1]);return Math.hypot(pt[0]-q[0],pt[1]-q[1])}
+  if(inGeo(pt,g))return 0;const polys=g.type==='Polygon'?[g.coordinates]:g.coordinates;let best=Infinity;
+  for(const p of polys)for(const r0 of p){const r=r0.map(c=>P(c[0],c[1]));for(let i=1;i<r.length;i++){const a=r[i-1],b=r[i],dx=b[0]-a[0],dy=b[1]-a[1],L=dx*dx+dy*dy;
+    let s=L?((pt[0]-a[0])*dx+(pt[1]-a[1])*dy)/L:0;s=Math.max(0,Math.min(1,s));best=Math.min(best,Math.hypot(pt[0]-a[0]-s*dx,pt[1]-a[1]-s*dy))}}return best}
+const nice=n=>n.replace(/\s+/g,' ').trim().replace(/(?!^)\b(Of|The|And|At|In|On|To)\b/g,m=>m.toLowerCase());
+const km=d=>d<1?'inside it':d<950?`about ${Math.max(10,Math.round(d/10)*10)} m`:`about ${(d/1000).toFixed(1)} km`;
+
+async function letterContext(loc){
+  const pt=P(loc.lon,loc.lat);const d={};for(const [k,t] of Object.entries(TARGETS))d[k]=nearest(pt,t).d;
+  const vill=VILL.map(v=>({name:v.name,d:Math.hypot(...[0,1].map(i=>P(v.lon,v.lat)[i]-pt[i]))})).sort((a,b)=>a.d-b.d)[0];
+  const [fl,he,na,ss]=await Promise.all([ldata('flood',OV.flood.url),ldata('heritage',OV.heritage.url),ldata('nature',OV.nature.url),ldata('sssi',OV.sssi.url)]);
+  let fz=null;for(const f of fl.features||[])if(inGeo(pt,f.geometry)){fz=f.properties.flood_zone;if(fz==='FZ3')break}
+  const her=(he.features||[]).map(f=>({...f.properties,me:distGeo(pt,f.geometry)})).filter(h=>h.me<1500).sort((a,b)=>{const w=x=>({I:0,'II*':1}[x.grade]??(x.kind==='sm'?1.5:x.kind==='ca'?1.8:2));return w(a)-w(b)||a.me-b.me});
+  const nat=(na.features||[]).map(f=>({...f.properties,me:distGeo(pt,f.geometry)}));
+  const sss=(ss.features||[]).map(f=>({...f.properties,me:distGeo(pt,f.geometry)}));
+  const west=loc.lon<0.38;
+  return {loc,d,vill,fz,her,nat,sss,west,near:Math.min(d.panels,d.dc,d.east,d.ohl,d.walpole)};
+}
+
+/* phrasing variety: chosen once per letter from a seed, so two letters from different people read differently */
+function rng(seed){let s=seed>>>0||1;return()=>{s^=s<<13;s^=s>>>17;s^=s<<5;return((s>>>0)%100000)/100000}}
+let R=Math.random;const v=a=>a[Math.floor(R()*a.length)];
+
+const GROUNDS=[
+ {id:'farmland',title:'Loss of best and most versatile farmland',pre:c=>true,
+  text:c=>`${v(['The scheme would take','The proposals would take','This development would take'])} some of the best farmland in England out of food production. On Defra's Predictive Agricultural Land Classification map, which the developer's own Scoping Report relies on, about 87% of the land inside the site boundary is predicted to be best and most versatile (Grades 1, 2 and 3a), including all of the proposed data centre zone. The data centre, substations, batteries and western overhead line are described as permanent, so that land would not return to farming. National Policy Statement EN-3 expects solar development to use previously developed land or poorer-quality land (Grades 3b, 4 and 5) where possible, the draft data centre policy says poorer land should be used where possible (paras 362 and 379), and the borough's Local Plan Policy LP24 seeks to protect best and most versatile land. ${v(['I ask the developer to publish its field soil survey results, the area of each grade that would be lost permanently and temporarily, and evidence that poorer-quality land was properly considered.','Before the application is submitted, the developer should publish its detailed soil surveys, show how much land of each grade would be lost permanently and temporarily, and set out what poorer-quality alternatives it assessed.'])}`},
+ {id:'datacentre',title:'A data centre decided as part of an energy project',pre:c=>true,
+  text:c=>`${v(['A 1 GW hyperscale data centre is not energy infrastructure.','The data centre is not an energy project.','A hyperscale data centre of around 1 GW is a very different thing from a solar farm.'])} It can only be brought into this process by a direction from the Secretary of State under section 35 of the Planning Act 2008, and the National Policy Statement that would be used to judge it is still a draft, out to consultation until 8 January 2027. ${v(['I object to the data centre being decided alongside the solar scheme, and to any decision being taken before national policy for data centres has been finalised.','It is premature to bundle up to ten 25 m buildings on 70 ha of farmland with a solar scheme before that policy has been settled, and I object to that approach.'])} The campus would be permanent, with construction phased over about ten years.`},
+ {id:'landscape',title:'Landscape and visual impact',pre:c=>c.near<3000,
+  text:c=>`${c.d.panels<1?'My home is within the area proposed for solar panels':`From my home, the nearest proposed solar area is ${km(c.d.panels)} away`}${c.d.ohl<3000?`, and the overhead line corridor is ${km(c.d.ohl)} away`:''}${c.d.dc<5000?`; the data centre zone, with buildings up to 25 m high, is ${km(c.d.dc)} away`:''}. ${v(['This is open, flat countryside where structures of this height and extent would be seen for long distances.','The landscape here is open and flat, so panels up to 4.5 m high, security fencing, CCTV poles and towers up to 50 m would be visible over a wide area.'])} National Policy Statement EN-1 (section 5.10) requires landscape and visual effects to be minimised through siting and design. ${v([`I ask for photomontages from ${c.vill&&c.vill.d<1500?c.vill.name:'my area'} and from the public footpaths I use, for longer stretches of cable to be placed underground, and for much larger set-backs from homes than the 30 m minimum proposed.`,`I ask the developer to provide photomontages from ${c.vill&&c.vill.d<1500?c.vill.name:'around my home'} in summer and winter, to underground more of the line, and to increase the 30 m minimum distance between panels and homes.`])}`},
+ {id:'heritage',title:'Harm to the setting of heritage assets',pre:c=>c.her.length>0,
+  text:c=>{const top=c.her.slice(0,3).map(h=>`${h.kind==='lb'&&/^(Church|Chapel|Ruins|Barn|Stables)/.test(nice(h.name))?'the ':''}${nice(h.name).replace(/,\s*\d+\s*m\b.*$/,'')} (${h.kind==='lb'?'Grade '+h.grade+' listed':h.kind==='sm'?'scheduled monument':h.kind==='ca'?'conservation area':'registered park and garden'}, ${km(h.me)} from my home)`);
+   return `${top.length?`Heritage assets near my home include ${top.length>1?top.slice(0,-1).join('; ')+'; and '+top[top.length-1]:top[0]}. `:''}On Historic England's records there are about 76 listed buildings within 1 km of the site boundary, including 6 Grade I and 8 Grade II*. The scheduled monument at Aylmer Hall and Fincham Conservation Area both touch the boundary. ${v(['Harm to the setting of these assets is a material consideration even where nothing is built on them, and','Their setting is part of their significance, and'])} National Policy Statement EN-1 (section 5.9) requires great weight to be given to their conservation, the more so the more important the asset. ${v(['I ask for a full assessment of effects on setting, with views from and towards each church, hall and conservation area, before the layout is fixed.','I ask that the layout be designed around these assets, with an assessment of views to and from them, rather than relying on screening after the event.'])}`}},
+ {id:'flood',title:'Flood risk',pre:c=>c.west||!!c.fz,
+  text:c=>`${c.fz?`My home is in Flood Zone ${c.fz==='FZ3'?'3':'2'} on the Environment Agency's Flood Map for Planning. `:''}About 42% of the land inside the site boundary is in Flood Zone 3, including almost all of the proposed data centre zone. National Policy Statement EN-1 (section 5.8) and national planning policy require development to be steered to areas at lowest risk through the Sequential Test, and the draft data centre policy (para 312) says the Secretary of State must be satisfied it has been applied. ${v(['I do not believe a permanent hyperscale data centre on tidal floodplain can pass that test.','Placing permanent, critical infrastructure on tidal floodplain is exactly what the Sequential Test is meant to prevent.'])} I also ask for the effect of extensive panels, tracks and hardstanding on surface water run-off, drains and dykes to be fully modelled, so that flooding is not made worse for neighbouring land and homes.`},
+ {id:'wildlife',title:'Protected wildlife sites',pre:c=>c.west||c.sss.some(s=>s.me<3000)||c.nat.some(n=>['spa','sac'].includes(n.kind)&&n.me<5000),
+  text:c=>{const nearS=c.sss.filter(s=>s.me<3000).sort((a,b)=>a.me-b.me)[0];
+   const heron=nearS&&/Islington/.test(nearS.name);
+   return `${nearS&&!heron?`${nearS.name} is ${km(nearS.me)} from my home. `:''}Islington Heronry SSSI${heron?`, ${km(nearS.me)} from my home`:''}, with the largest breeding colony of grey herons in Norfolk, lies inside the site, and only a 100 m buffer is proposed. The Breckland Special Protection Area, protected for stone curlew, nightjar and woodlark, is about 2.1 km from the site, and The Wash about 7 km. National Policy Statement EN-1 (section 5.4) and the Habitats Regulations require these sites to be protected, including birds that use farmland outside their boundaries. ${v(['I ask for the bird survey results to be published and for a full Habitats Regulations Assessment before the layout is fixed.','I ask whether any of the fields are functionally linked to these sites, and for much larger buffers, with strict controls on lighting and construction noise.'])}`}},
+ {id:'woodland',title:'Ancient woodland',pre:c=>!c.west&&c.d.site<4000,
+  text:c=>`Birch Wood, ancient semi-natural woodland, sits right on the Eastern Site boundary and touches a proposed solar area. National policy treats ancient woodland as irreplaceable: development that would damage it should be refused unless there are wholly exceptional reasons, and Natural England's standing advice calls for a buffer of at least 15 m, and more where effects reach further. ${v(['I ask for a much wider buffer, free of panels, fencing, tracks and lighting, and for protection of its drainage and root zone.','I ask that the layout keep well back from Birch Wood and protect its drainage, rather than relying on the minimum buffer.'])}`},
+ {id:'noise',title:'Noise, lighting and disturbance',pre:c=>c.d.dc<3000||c.d.east<2000||c.d.panels<500,
+  text:c=>`${c.d.dc<5000?`The data centre zone is ${km(c.d.dc)} from my home. A hyperscale campus runs day and night, with cooling plant, back-up generators and security lighting. `:''}${c.d.east<3000?`The eastern substation and battery site is ${km(c.d.east)} from my home. `:''}This is a quiet rural area with dark skies. National Policy Statement EN-1 (section 5.12) requires noise to be avoided or minimised. ${v(['I ask for noise and lighting limits to be set at the boundary of the nearest homes, with continuous monitoring, and for the separation from homes to be increased.','I ask for a full night-time noise and lighting assessment from the nearest homes, and for binding limits secured in the order.'])}`},
+ {id:'traffic',title:'Traffic and construction',pre:c=>c.near<2000,
+  text:c=>`Construction would run for years, and the data centre alone would be built in phases over about ten years. ${v(['Our lanes are narrow and not built for heavy goods vehicles.','The local roads are narrow rural lanes used by walkers, cyclists, riders and school traffic.'])} National Policy Statement EN-1 (section 5.14) requires transport effects to be assessed and mitigated. I ask for construction routes that keep heavy vehicles out of the villages, limits on hours and vehicle numbers, and a construction traffic plan that the community can see before the application is submitted.`},
+ {id:'battery',title:'Battery fire safety',pre:c=>c.d.east<3000||c.d.dc<3000,
+  text:c=>`${c.d.east<c.d.dc?`The battery and substation site is ${km(c.d.east)} from my home`:`The western battery and substation area is ${km(c.d.dc)} from my home`}. Large lithium-ion battery installations carry a risk of fire and toxic smoke. I ask for the layout, spacing, fire-water containment and emergency plan to be agreed with Norfolk Fire and Rescue Service and published before the application, following the National Fire Chiefs Council's guidance on grid-scale battery storage.`},
+ {id:'alternatives',title:'Site selection and alternatives',pre:c=>false,
+  text:c=>`The Scoping Report lists "availability of suitable land" among the reasons this site was chosen. Availability is not the same as suitability. ${v(['I ask the developer to publish the alternative sites and routes it assessed, and why they were rejected, so that it can be seen whether lower-grade land or previously developed land was genuinely considered.','The application must show that reasonable alternatives were studied; I ask for those alternatives, and the reasons for rejecting them, to be published now.'])}`},
+ {id:'cumulative',title:'Cumulative effects with other projects',pre:c=>false,
+  text:c=>`Longmarsh would come on top of other large solar projects in west Norfolk, including The Droves and High Grove, and other energy projects around Walpole. The environmental assessment must consider cumulative effects. ${v(['I ask for the combined loss of farmland, landscape change and construction traffic from all these projects to be assessed together.','Taken together, these projects would change the character of a large part of west Norfolk, and I ask for that to be assessed as a whole.'])}`}
+];
+
+function letterText(c,o){
+  R=rng(o.seed);
+  const today=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const chosen=GROUNDS.filter(g=>o.grounds.includes(g.id));
+  const where=c.d.panels<1?'inside the area proposed for solar panels':`${km(c.d.panels)} from the nearest proposed solar area`;
+  const open=v([
+    `I am writing to object to the Longmarsh Green Energy proposals. I live ${c.vill&&c.vill.d<1500?'in '+c.vill.name+', ':''}${where}.`,
+    `I wish to register my objection to the Longmarsh Green Energy scheme. My home ${c.vill&&c.vill.d<1500?'in '+c.vill.name+' ':''}is ${where}.`,
+    `Please record this letter as an objection to Longmarsh Green Energy. I live ${c.vill&&c.vill.d<1500?'in '+c.vill.name+', ':''}${where}.`]);
+  const P2=[];
+  if(o.mine.trim())P2.push(o.mine.trim());
+  if(o.effect.trim())P2.push(o.effect.trim());
+  const body=chosen.map((g,i)=>`${i+1}. ${g.title}\n${g.text(c)}`).join('\n\n');
+  const close=v([
+    'Under section 49 of the Planning Act 2008 you must have regard to this response. Please include it in your Consultation Report, tell me how each point has been addressed, and keep me informed. I intend to register as an interested party with the Planning Inspectorate once the application is accepted.',
+    'Please take these points into account as section 49 of the Planning Act 2008 requires, include this letter in the Consultation Report, and explain how each point has been dealt with. I will also be registering as an interested party with the Planning Inspectorate when the application is accepted.']);
+  return {today,text:
+`${o.name.trim()||'[Your full name]'}
+[Your address]
+[Your address]
+${o.postcode||'[Postcode]'}
+
+${today}
+
+Longmarsh Green Energy consultation
+Freepost LONGMARSH GREEN ENERGY
+
+Dear Sir or Madam,
+
+Longmarsh Green Energy (Planning Inspectorate ref. EN0110048): objection
+
+${open}${P2.length?'\n\n'+P2.join('\n\n'):''}
+
+I object for the following reasons.
+
+${body}${o.extra.trim()?'\n\n'+o.extra.trim():''}
+
+${close}
+
+Yours faithfully,
+
+
+
+Signed: ______________________________
+
+Name: ${o.name.trim()||'______________________________'}`};
+}
+
+function openLetter(){
+  if(!LASTLOC){toast('Enter your postcode first.');return}
+  const dlg=$('#letterDlg');dlg.hidden=false;document.body.classList.add('dlg-open');
+  $('#lt-where').textContent='Working out what is near you…';$('#lt-grounds').innerHTML='';
+  letterContext(LASTLOC).then(c=>{
+    dlg._ctx=c;
+    const bits=[`nearest solar area ${km(c.d.panels)}`,`data centre zone ${km(c.d.dc)}`,`overhead line ${km(c.d.ohl)}`];
+    if(c.fz)bits.push(`your spot is in Flood Zone ${c.fz.slice(2)}`);
+    if(c.her.length)bits.push(`${c.her.length} heritage assets within 1.5 km`);
+    $('#lt-where').textContent=`${LASTLOC.title}: `+bits.join(' · ')+'.';
+    const PRI=c.west?['flood','landscape','noise','heritage','wildlife','battery','traffic','woodland']:['landscape','heritage','woodland','noise','battery','traffic','flood','wildlife'];
+    const pick=new Set(['farmland','datacentre',...PRI.filter(id=>GROUNDS.find(g=>g.id===id).pre(c)).slice(0,3)]);
+    $('#lt-grounds').innerHTML=GROUNDS.map(g=>`<label class="lrow"><input type="checkbox" value="${g.id}" ${pick.has(g.id)?'checked':''}><span class="lname">${esc(g.title)}</span>${g.pre(c)&&!pick.has(g.id)?'<span class="ht">also relevant</span>':''}</label>`).join('');
+    $('#lt-pc').value=LASTLOC.postcode||'';
+  });
+}
+function makeLetter(){
+  const c=$('#letterDlg')._ctx;if(!c)return;
+  const grounds=[...document.querySelectorAll('#lt-grounds input:checked')].map(i=>i.value);
+  if(!grounds.length){toast('Choose at least one concern.');return}
+  if(!$('#lt-mine').value.trim()&&!$('#lt-effect').value.trim()){toast('Add a sentence or two in your own words. This is what makes your letter count.');$('#lt-mine').focus();return}
+  const seed=[...(LASTLOC.title+$('#lt-mine').value+Date.now())].reduce((a,ch)=>(a*31+ch.charCodeAt(0))>>>0,7);
+  const L=letterText(c,{seed,grounds,name:$('#lt-name').value,postcode:$('#lt-pc').value.trim().toUpperCase(),mine:$('#lt-mine').value,effect:$('#lt-effect').value,extra:$('#lt-extra').value});
+  $('#lt-out').value=L.text;$('#lt-step2').hidden=false;$('#lt-out').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function printLetter(){
+  const t=$('#lt-out').value;const w=window.open('','_blank');if(!w){toast('Allow pop-ups to print, or use Copy text.');return}
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Longmarsh response letter</title><style>@page{size:A4;margin:22mm}body{font:11.5pt/1.5 Georgia,serif;color:#000;white-space:pre-wrap;max-width:170mm;margin:0 auto}</style></head><body>${esc(t)}</body></html>`);
+  w.document.close();w.focus();setTimeout(()=>w.print(),300);
+}
+
 /* ---------- UI wiring ---------- */
 function showTab(name){document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===name));
   document.querySelectorAll('[data-panel]').forEach(s=>s.hidden=s.dataset.panel!==name);$('#panel').classList.remove('min')}
@@ -893,12 +1169,21 @@ $('#showFlood').onclick=()=>{setOverlay('flood',true);setView3D(false,false);
   map.fitBounds([[0.17,52.585],[0.58,52.74]],{padding:window.innerWidth>760?{top:60,bottom:60,left:440,right:60}:{top:40,bottom:Math.round(window.innerHeight*0.5),left:30,right:30},pitch:0,bearing:0,duration:1500})};
 $('#showAlc').onclick=()=>{setOverlay('alc',true);setView3D(false,false);
   map.fitBounds([[0.17,52.585],[0.58,52.74]],{padding:window.innerWidth>760?{top:60,bottom:60,left:440,right:60}:{top:40,bottom:Math.round(window.innerHeight*0.5),left:30,right:30},pitch:0,bearing:0,duration:1500})};
+$('#showSssi').onclick=()=>{setOverlay('sssi',true);setView3D(false,false);
+  map.fitBounds([[0.17,52.585],[0.58,52.74]],{padding:window.innerWidth>760?{top:60,bottom:60,left:440,right:60}:{top:40,bottom:Math.round(window.innerHeight*0.5),left:30,right:30},pitch:0,bearing:0,duration:1500})};
+const fitAll=()=>map.fitBounds([[0.17,52.585],[0.58,52.74]],{padding:window.innerWidth>760?{top:60,bottom:60,left:440,right:60}:{top:40,bottom:Math.round(window.innerHeight*0.5),left:30,right:30},pitch:0,bearing:0,duration:1500});
+$('#showHeritage').onclick=()=>{setOverlay('heritage',true);setView3D(false,false);fitAll()};
+$('#showNature').onclick=()=>{setOverlay('nature',true);setView3D(false,false);map.fitBounds([[0.05,52.50],[0.75,52.82]],{padding:window.innerWidth>760?{top:60,bottom:60,left:440,right:60}:{top:40,bottom:Math.round(window.innerHeight*0.5),left:30,right:30},pitch:0,bearing:0,duration:1500})};
+$('#lt-close').onclick=()=>{$('#letterDlg').hidden=true;document.body.classList.remove('dlg-open')};
+$('#letterDlg').addEventListener('click',e=>{if(e.target.id==='letterDlg')$('#lt-close').onclick()});
+$('#lt-make').onclick=makeLetter;$('#lt-again').onclick=makeLetter;$('#lt-print').onclick=printLetter;
+$('#lt-copy').onclick=async()=>{try{await navigator.clipboard.writeText($('#lt-out').value);toast('Letter copied')}catch(_){$('#lt-out').select();toast('Text selected. Press Ctrl+C or Cmd+C to copy.')}};
 $('#grab').onclick=()=>$('#panel').classList.toggle('min');
 
 $('#pcform').addEventListener('submit',async e=>{e.preventDefault();const pc=$('#pc').value.trim();if(!pc)return;
   try{const r=await fetch('https://api.postcodes.io/postcodes/'+encodeURIComponent(pc));const j=await r.json();
     if(j.status!==200)throw new Error(j.error||'not found');
-    const {longitude:lon,latitude:lat,postcode}=j.result;report(lon,lat,postcode);
+    const {longitude:lon,latitude:lat,postcode}=j.result;report(lon,lat,postcode,postcode);
     flyTo2D(lon,lat,nearestBuilt(P(lon,lat)));
   }catch(err){toast('That postcode was not found. Check it and try again, or tap the map instead.')}});
 $('#geo').onclick=()=>{if(!navigator.geolocation){toast('Location is not available in this browser.');return}
