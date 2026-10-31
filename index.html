@@ -140,17 +140,30 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
 .ovkey{display:flex;flex-direction:column;gap:3px;margin:4px 0 8px;font-size:12px}
 .ovkey i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-2px;opacity:.8}
 .ovkey small{opacity:.75;line-height:1.35;margin-top:2px}
-.dlg{position:fixed;inset:0;background:rgba(10,20,15,.55);z-index:50;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:24px 12px}
+.dlg{position:fixed;inset:0;background:rgba(5,10,8,.6);z-index:50;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:28px 14px}
 .dlg[hidden]{display:none}
-.dlg-card{background:var(--panel,#fbfaf6);color:inherit;max-width:760px;width:100%;border-radius:12px;padding:20px 22px 26px;position:relative;box-shadow:0 12px 40px rgba(0,0,0,.35)}
-.dlg-card h2{margin:0 0 8px}.dlg-card h3{margin:18px 0 6px;font-size:14px;text-transform:uppercase;letter-spacing:.06em}
-.dlg-x{position:absolute;right:12px;top:8px;border:0;background:none;font-size:28px;cursor:pointer;color:inherit}
-.dlg-card textarea,.dlg-card input{width:100%;box-sizing:border-box;font:14px/1.45 inherit;font-family:inherit;padding:8px 10px;border:1px solid #c9c6bb;border-radius:8px;background:#fff;color:#111;margin:4px 0 10px}
-#lt-out{font-family:Georgia,serif;font-size:14px}
-.lt-lab{display:block;font-size:13px;font-weight:600;margin-top:4px}
-.lt-row{display:grid;grid-template-columns:2fr 1fr;gap:12px}
-.lt-where{background:#eef4ef;border-radius:8px;padding:8px 10px;font-size:13px}
-@media (max-width:600px){.lt-row{grid-template-columns:1fr}.dlg{padding:0}.dlg-card{border-radius:0}}
+.dlg-card{background:var(--panel);color:var(--ink);max-width:780px;width:100%;border-radius:14px;padding:22px 26px 28px;position:relative;box-shadow:var(--shadow);border:1px solid var(--line);font-size:15px;line-height:1.5}
+.dlg-card h2{font-family:var(--display);font-size:26px;letter-spacing:.01em;margin:0 40px 12px 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dlg-card h3{font-family:var(--display);font-size:17px;text-transform:uppercase;letter-spacing:.06em;margin:22px 0 6px;display:flex;align-items:center;gap:8px}
+.dlg-card .note{margin:6px 0 10px}
+.dlg-x{position:absolute;right:14px;top:10px;border:0;background:none;font-size:30px;line-height:1;cursor:pointer;color:var(--muted)}
+.dlg-x:hover{color:var(--ink)}
+.dlg-card textarea,.dlg-card input[type="text"],.dlg-card input:not([type]){display:block;width:100%;box-sizing:border-box;font:inherit;font-size:15px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);margin:6px 0 12px;resize:vertical}
+.dlg-card textarea:focus,.dlg-card input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.dlg-card textarea::placeholder{color:var(--muted)}
+#lt-out{background:#fffef9;color:#151515;font-family:Georgia,"Times New Roman",serif;font-size:15px;line-height:1.55;padding:18px 20px;border-color:var(--line)}
+.lt-lab{display:block;font-size:14px;font-weight:600;margin-top:6px}
+.lt-row{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+.lt-row .lt-lab{margin:0}
+.lt-where{background:var(--chip);color:var(--ink);border-radius:8px;padding:10px 12px;font-size:14px;margin:12px 0 4px}
+.lt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;margin-top:6px}
+.lt-opt{display:flex;align-items:flex-start;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;cursor:pointer;font-size:14.5px;line-height:1.35;background:transparent}
+.lt-opt:hover{background:var(--chip)}
+.lt-opt:has(input:checked){border-color:var(--accent);background:var(--chip)}
+.lt-opt input{width:18px;height:18px;margin:1px 0 0;flex:none;accent-color:var(--accent);cursor:pointer}
+.lt-opt small{display:block;color:var(--await);font-size:12px;margin-top:2px}
+.dlg-card .btnrow{margin-top:8px}
+@media (max-width:600px){.lt-row{grid-template-columns:1fr}.dlg{padding:0}.dlg-card{border-radius:0;padding:18px 16px 24px;min-height:100%}.dlg-card h2{font-size:22px}}
 body.dlg-open{overflow:hidden}
 </style>
 </head>
@@ -624,7 +637,7 @@ SW1A 2EG</div></dd>
     <p class="lt-where" id="lt-where"></p>
     <h3>1. Your concerns</h3>
     <p class="note">Pre-ticked from what is near you. Fewer, well-made points beat a long list.</p>
-    <div class="legend" id="lt-grounds"></div>
+    <div class="lt-grid" id="lt-grounds"></div>
     <h3>2. In your own words <span class="await-chip">important</span></h3>
     <label class="lt-lab" for="lt-mine">How you know this area: how long you've lived here, how you use the land, lanes and footpaths</label>
     <textarea id="lt-mine" rows="3" placeholder="e.g. I have lived on ... for 18 years and walk the footpath from ... to ... most days."></textarea>
@@ -633,7 +646,7 @@ SW1A 2EG</div></dd>
     <label class="lt-lab" for="lt-extra">Anything else (optional)</label>
     <textarea id="lt-extra" rows="2"></textarea>
     <h3>3. Your details</h3>
-    <div class="lt-row"><label class="lt-lab">Name (optional, or leave blank to write it by hand)<input id="lt-name" autocomplete="name"></label><label class="lt-lab">Postcode<input id="lt-pc" autocomplete="postal-code"></label></div>
+    <div class="lt-row"><label class="lt-lab">Name (optional, or leave blank to write it by hand)<input type="text" id="lt-name" autocomplete="name"></label><label class="lt-lab">Postcode<input type="text" id="lt-pc" autocomplete="postal-code"></label></div>
     <p class="note">Your address is left as blank lines to fill in by hand. Nothing you type here leaves your browser.</p>
     <div class="btnrow"><button class="btn primary" id="lt-make">Draft my letter</button></div>
     <div id="lt-step2" hidden>
@@ -1125,7 +1138,7 @@ function openLetter(){
     $('#lt-where').textContent=`${LASTLOC.title}: `+bits.join(' · ')+'.';
     const PRI=c.west?['flood','landscape','noise','heritage','wildlife','battery','traffic','woodland']:['landscape','heritage','woodland','noise','battery','traffic','flood','wildlife'];
     const pick=new Set(['farmland','datacentre',...PRI.filter(id=>GROUNDS.find(g=>g.id===id).pre(c)).slice(0,3)]);
-    $('#lt-grounds').innerHTML=GROUNDS.map(g=>`<label class="lrow"><input type="checkbox" value="${g.id}" ${pick.has(g.id)?'checked':''}><span class="lname">${esc(g.title)}</span>${g.pre(c)&&!pick.has(g.id)?'<span class="ht">also relevant</span>':''}</label>`).join('');
+    $('#lt-grounds').innerHTML=GROUNDS.map(g=>`<label class="lt-opt"><input type="checkbox" value="${g.id}" ${pick.has(g.id)?'checked':''}><span>${esc(g.title)}${g.pre(c)&&!pick.has(g.id)?'<small>Also relevant where you are</small>':''}</span></label>`).join('');
     $('#lt-pc').value=LASTLOC.postcode||'';
   });
 }
