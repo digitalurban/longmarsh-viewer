@@ -198,6 +198,7 @@ body.dlg-open{overflow:hidden}
     <button role="tab" aria-selected="false" data-tab="unknowns">Awaiting</button>
     <button role="tab" aria-selected="false" data-tab="objections">Objections</button>
     <button role="tab" aria-selected="false" data-tab="respond">Respond</button>
+    <button role="tab" aria-selected="false" data-tab="letter">Write a letter</button>
     <button role="tab" aria-selected="false" data-tab="docs">Documents</button>
     <button role="tab" aria-selected="false" data-tab="local">Local info</button>
     <button role="tab" aria-selected="false" data-tab="disclaimer">Disclaimer</button>
@@ -224,7 +225,7 @@ body.dlg-open{overflow:hidden}
       <h2>Checking your own area</h2>
       <ul class="plain">
         <li><b>Near me tab:</b> enter a postcode, or press <i>Use my location</i> (your browser will ask permission first). You'll see straight-line distances to the solar areas, the data centre zone, the substations, the overhead line and the site boundary.</li>
-        <li><b>Write a response letter</b> (Near me tab, after a postcode) drafts a letter built from your location, the concerns you choose and your own words, ready to print, sign and post. Check and edit it before you send it.</li>
+        <li><b>Write a letter</b> tab, or <b>Write a response letter</b> in the Near me tab after a postcode, drafts a letter built from your location, the concerns you choose and your own words, ready to print, sign and post. Check and edit it before you send it.</li>
         <li>From there, <b>Street View facing it</b> opens Google Street View at that spot, pointing towards the nearest part of the scheme. <b>Stand here in 3D</b> drops you to eye level on this map.</li>
         <li><b>Villages tab:</b> 45 nearby villages, sorted by distance to the site boundary. Tap one to zoom to it on the flat map, framed with the nearest part of the scheme, and see its distances. Use <i>Stand here in 3D</i> for an eye-level view.</li>
       </ul>
@@ -500,6 +501,32 @@ SW1A 2EG</div></dd>
       <p class="src">Sources: consultation leaflet p21–22; Planning Inspectorate project page; GOV.UK consultation page (checked 29 Oct 2026).</p>
     </section>
 
+    <section data-panel="letter" hidden>
+      <h2>Write a letter <span class="await-chip">Work in progress</span></h2>
+      <p>Draft a response to the developer's consultation, built from where you live, the concerns you choose and your own words. You can then print it, sign it and post it, or copy it into an email.</p>
+      <div class="awaitbox"><p><b>Draft only.</b> This letter writer is a work in progress. Read the whole letter before you send it, check every fact and reference against the original documents, and edit it as you see fit. Once sent, it is your own response in your own name. It is not legal or planning advice.</p></div>
+      <h3 class="grp">1. Start with your postcode</h3>
+      <form class="search" id="ltpcform">
+        <label for="ltpc" style="position:absolute;left:-9999px">Postcode</label>
+        <input id="ltpc" placeholder="e.g. PE33 9EL" autocomplete="postal-code">
+        <button class="btn primary" type="submit">Start my letter</button>
+      </form>
+      <div class="btnrow"><button class="btn" id="ltgeo">Use my location instead</button></div>
+      <p class="note">Your postcode is looked up with postcodes.io to find its location. Nothing you write in the letter leaves your browser.</p>
+      <h3 class="grp">2. Where to send it</h3>
+      <p>Send it to the developer's consultation by <b>11.59pm on Thursday 26 November 2026</b>.</p>
+      <dl class="dl">
+        <dt>Post</dt><dd><span id="lt-addr">Freepost LONGMARSH GREEN ENERGY</span><br><small>No stamp or further address needed.</small> <button class="btn" data-copy="lt-addr" style="margin-top:4px">Copy address</button></dd>
+        <dt>Email</dt><dd><a href="mailto:info@longmarshgreenenergy.co.uk?subject=Longmarsh%20Green%20Energy%20(EN0110048)%3A%20consultation%20response" id="lt-email">info@longmarshgreenenergy.co.uk</a><br><small>Paste your letter into the email, with "Longmarsh Green Energy (EN0110048)" in the subject line.</small></dd>
+        <dt>Online</dt><dd><a href="https://longmarshgreenenergy.co.uk/feedback" target="_blank" rel="noopener">longmarshgreenenergy.co.uk/feedback</a></dd>
+      </dl>
+      <h3 class="grp">3. Keep a copy</h3>
+      <ul class="plain">
+        <li>Keep a copy of what you send. Once the application has been submitted to the Planning Inspectorate (expected April 2027) and accepted, you can register as an interested party and make your points again. That is the formal stage of the decision. See the Respond tab.</li>
+        <li>Points about farmland and how data centres are approved can also go to the government's consultation on the draft National Policy Statement for Data Centres (closes 11.59pm, 8 January 2027): <a href="https://www.gov.uk/government/consultations/draft-national-policy-statement-for-data-centres" target="_blank" rel="noopener">respond online</a> or email <a href="mailto:datacentrenps@dsit.gov.uk">datacentrenps@dsit.gov.uk</a>.</li>
+      </ul>
+      <p class="src">Addresses and deadlines: consultation leaflet p21–22; GOV.UK consultation page (checked 29 Oct 2026).</p>
+    </section>
     <section data-panel="docs" hidden>
       <p>Official documents, all hosted online by their publishers. Large files are marked.</p>
       <h2>From the developer</h2>
@@ -1191,6 +1218,14 @@ $('#lt-close').onclick=()=>{$('#letterDlg').hidden=true;document.body.classList.
 $('#letterDlg').addEventListener('click',e=>{if(e.target.id==='letterDlg')$('#lt-close').onclick()});
 $('#lt-make').onclick=makeLetter;$('#lt-again').onclick=makeLetter;$('#lt-print').onclick=printLetter;
 $('#lt-copy').onclick=async()=>{try{await navigator.clipboard.writeText($('#lt-out').value);toast('Letter copied')}catch(_){$('#lt-out').select();toast('Text selected. Press Ctrl+C or Cmd+C to copy.')}};
+async function startLetterAt(lon,lat,title,postcode){LASTLOC={lon,lat,title,postcode:postcode||''};
+  map.getSource('me')&&map.getSource('me').setData({type:'FeatureCollection',features:[{type:'Feature',geometry:{type:'Point',coordinates:[lon,lat]},properties:{}}]});
+  flyTo2D(lon,lat,nearestBuilt(P(lon,lat)));openLetter()}
+$('#ltpcform').addEventListener('submit',async e=>{e.preventDefault();const pc=$('#ltpc').value.trim();if(!pc){toast('Enter your postcode first.');return}
+  try{const r=await fetch('https://api.postcodes.io/postcodes/'+encodeURIComponent(pc));const j=await r.json();if(j.status!==200)throw new Error();
+    const {longitude:lon,latitude:lat,postcode}=j.result;startLetterAt(lon,lat,postcode,postcode)}catch(_){toast('That postcode was not found. Check it and try again.')}});
+$('#ltgeo').onclick=()=>{if(!navigator.geolocation){toast('Location is not available in this browser.');return}
+  navigator.geolocation.getCurrentPosition(p=>startLetterAt(p.coords.longitude,p.coords.latitude,'Your location',''),()=>toast('Location permission was refused. Enter a postcode instead.'),{enableHighAccuracy:true,timeout:10000})};
 $('#grab').onclick=()=>$('#panel').classList.toggle('min');
 
 $('#pcform').addEventListener('submit',async e=>{e.preventDefault();const pc=$('#pc').value.trim();if(!pc)return;
