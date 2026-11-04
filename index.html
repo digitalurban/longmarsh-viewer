@@ -692,7 +692,7 @@ SW1A 2EG</div></dd>
 <script>
 /* status: 'pub' = published by the applicant (shape + parameter); 'await' = presumption awaiting information */
 const LAYERS=[
- {k:'solar',status:'pub',name:'Solar panel & battery area',h:'≤4.5 m',col:'#f5c518',
+ {k:'solar',status:'pub',name:'Solar panel & battery area (grey)',h:'≤4.5 m',col:'#8c9196',
    src:'Fig. 1-3 Layout Plan ("Solar PV Panels – Height 4.5m"); §4.4.6',
    known:'Area where panels and some battery storage will go. Panels up to 4.5 m high, at least 30 m from homes.',
    awaiting:'Rows, tracks, inverters and buffers inside the area are not yet laid out.'},
@@ -719,7 +719,7 @@ const LAYERS=[
  {k:'biodiversity',status:'pub',name:'Biodiversity area',h:'ground',col:'#0b6e1a',src:'Fig. 1-3 ("Biodiversity Area")',known:'Area set aside for habitat.',awaiting:'Planting and habitat plans.'},
  {k:'access_track',status:'pub',name:'Access track',h:'ground',col:'#333333',src:'Fig. 1-3 ("Access Track")',known:'Published access track.',awaiting:'Other site entrances and construction routes.'},
  {k:'boundary',status:'pub',name:'Site boundary (official order limits)',h:'',col:'#e3191c',line:true,src:'Planning Inspectorate boundary file EN0110048 ("LMG Order Limits – 22-09-26"), 1,979 ha',known:'Land the applicant expects to need, as lodged with the Planning Inspectorate.',awaiting:'The applicant says the boundary is indicative and may be refined, e.g. near Walpole.'},
- {k:'envelope',status:'await',name:'Height envelopes (each zone raised to its maximum; solar shown in grey)',h:'4.5–25 m',col:'#c27c0e',hatch:true,
+ {k:'envelope',status:'await',name:'Height envelopes (in 3D, each zone is raised to its maximum height)',h:'4.5–25 m',col:'#c27c0e',hatch:true,
    src:'Presumption based on max heights in §4.4',known:'Maximum heights are published.',awaiting:'Real buildings and panels will cover only part of each zone.'},
  {k:'tower',status:'await',name:'Overhead line towers',h:'35–50 m',col:'#c27c0e',hatch:true,
    src:'Presumption: evenly spaced along the corridor centre',known:'Corridor and maximum tower height are published.',awaiting:'Tower count and positions.'},
