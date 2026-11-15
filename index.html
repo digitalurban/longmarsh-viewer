@@ -161,6 +161,13 @@ ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;f
 .lt-opt:hover{background:var(--chip)}
 .lt-opt:has(input:checked){border-color:var(--accent);background:var(--chip)}
 .lt-opt input{width:18px;height:18px;margin:1px 0 0;flex:none;accent-color:var(--accent);cursor:pointer}
+.ev-form label.f{display:block;font-weight:600;margin:12px 0 4px}
+.ev-form input[type=date],.ev-form textarea{display:block;width:100%;box-sizing:border-box;font:inherit;font-size:15px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.ev-form .lt-grid{grid-template-columns:1fr}
+#evPreview{max-width:100%;max-height:180px;border-radius:8px;margin-top:6px;display:block}
+.ev-status{margin-top:10px;padding:9px 11px;border-radius:8px;background:var(--chip)}
+.ev-pin{width:22px;height:22px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#d7301f;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.ev-photo{width:100%;max-height:260px;object-fit:cover;border-radius:6px;margin:6px 0}
 .lt-opt small{display:block;color:var(--await);font-size:12px;margin-top:2px}
 .dlg-card .btnrow{margin-top:8px}
 @media (max-width:600px){.lt-row{grid-template-columns:1fr}.dlg{padding:0}.dlg-card{border-radius:0;padding:18px 16px 24px;min-height:100%}.dlg-card h2{font-size:22px}}
@@ -199,6 +206,7 @@ body.dlg-open{overflow:hidden}
     <button role="tab" aria-selected="false" data-tab="objections">Objections</button>
     <button role="tab" aria-selected="false" data-tab="respond">Respond</button>
     <button role="tab" aria-selected="false" data-tab="letter">Write a letter</button>
+    <button role="tab" aria-selected="false" data-tab="evidence">Add evidence</button>
     <button role="tab" aria-selected="false" data-tab="docs">Documents</button>
     <button role="tab" aria-selected="false" data-tab="local">Local info</button>
     <button role="tab" aria-selected="false" data-tab="disclaimer">Disclaimer</button>
@@ -259,7 +267,13 @@ body.dlg-open{overflow:hidden}
         <label class="lrow"><input type="checkbox" data-ov="heritage"><span class="sw" style="background:#fff;border:2px dashed #6a3d9a;box-shadow:inset 0 0 0 3px #b2182b"></span><span class="lname">Heritage: listed buildings, scheduled monuments, parks, conservation areas</span><span class="ht">HE</span></label>
         <label class="lrow"><input type="checkbox" data-ov="nature"><span class="sw" style="background:repeating-linear-gradient(135deg,#7570b3 0 3px,transparent 3px 7px);border:2px solid #7570b3"></span><span class="lname">International wildlife sites (SPA, SAC, Ramsar) and ancient woodland</span><span class="ht">NE</span></label>
         <label class="lrow" id="row-sssi"><input type="checkbox" data-ov="sssi"><span class="sw" style="background:#26a69a;opacity:.6;border:2px solid #004d40"></span><span class="lname">Sites of Special Scientific Interest (SSSI)</span><span class="ht">NE</span></label>
+        <label class="lrow" id="row-bld"><input type="checkbox" data-ov="bld"><span class="sw" style="background:linear-gradient(90deg,#7f0000 0 25%,#d7301f 25% 50%,#fc8d59 50% 75%,#fdd49e 75%)"></span><span class="lname">Homes and gardens: buildings and plot boundaries, coloured by distance to the scheme (zoom in)</span><span class="ht">OSM</span></label>
+        <label class="lrow" id="row-lbd"><input type="checkbox" data-ov="lbd"><span class="sw" style="background:linear-gradient(90deg,#7f0000 0 25%,#d7301f 25% 50%,#fc8d59 50% 75%,#fdd49e 75%);border-radius:50%;box-shadow:inset 0 0 0 2px #67001f"></span><span class="lname">Listed buildings, coloured by distance to the scheme</span><span class="ht">HE</span></label>
+        <label class="lrow" id="row-evid"><input type="checkbox" data-ov="evid"><span class="sw" style="background:#6a51a3;border-radius:50%"></span><span class="lname">Residents' evidence (checked by moderators)</span><span class="ht">public</span></label>
       </div>
+      <div class="ovkey" id="key-evid" hidden><span><i style="background:#6a51a3;border-radius:50%"></i>Road disrepair and damage</span><span><i style="background:#08519c;border-radius:50%"></i>Flooding: houses</span><span><i style="background:#3182bd;border-radius:50%"></i>Flooding: fields</span><span><i style="background:#9ecae1;border-radius:50%"></i>Flooding: roads and surroundings</span><span><i style="background:#238b45;border-radius:50%;opacity:.6"></i>Wildlife (location shown to about 1 km)</span><small>Sent in by residents and checked for suitability before it appears, but not verified. Tap a pin for the photo and description. <a href="#" data-goto="evidence">Add your own</a>.</small></div>
+      <div class="ovkey" id="key-lbd" hidden><span><i style="background:#7f0000;border-radius:50%"></i>Within 50 m of a solar area or other scheme works</span><span><i style="background:#d7301f;border-radius:50%"></i>50 to 100 m</span><span><i style="background:#fc8d59;border-radius:50%"></i>100 to 250 m</span><span><i style="background:#fdd49e;border-radius:50%"></i>250 to 500 m</span><span><i style="background:#bdbdbd;border-radius:50%"></i>Further than 500 m</span><span><i style="background:#fff;border:3px solid #67001f;border-radius:50%"></i>Ring colour: Grade I (dark), II* (red), II (pink); bigger dot = higher grade</span><small>Every listed building within 3 km of the site, from Historic England's National Heritage List. Where the list entry falls on an OpenStreetMap building outline (most within about 1 km of the site), the outline is drawn and distances are measured from it, and from its Land Registry plot where there is one; otherwise from the list entry point. Distances are to the nearest solar panel area, substation and battery zone, data centre zone or overhead line corridor, as traced from the Scoping Report figures, so allow 20 m or so either way. Distance alone doesn't measure harm to a building's setting, which also depends on views, history and how the building is experienced.</small><span style="margin-top:4px"><button type="button" class="btn" id="lbdList">List the closest listed buildings</button></span><div id="lbdOut"></div></div>
+      <div class="ovkey" id="key-bld" hidden><span><i style="background:#7f0000"></i>Within 50 m of a solar area or other scheme works</span><span><i style="background:#d7301f"></i>50 to 100 m</span><span><i style="background:#fc8d59"></i>100 to 250 m</span><span><i style="background:#fdd49e"></i>250 to 500 m</span><span><i style="background:#bdbdbd"></i>Further than 500 m</span><span><i style="background:transparent;border:2px dashed #d7301f"></i>Plot or garden boundary (Land Registry)</span><small>Building outlines from OpenStreetMap. Plot and garden boundaries from HM Land Registry's registered title outlines, used where a title of up to half a hectare contains the building (bigger titles, such as farms, are left out). Each building is coloured by the closer of its plot boundary and its own outline. Distances are to the nearest solar panel area, substation and battery zone, data centre zone or overhead line corridor, as traced from the Scoping Report figures, so allow 20 m or so either way. Title outlines are indicative, not exact legal boundaries; about one property in eight is unregistered; and OpenStreetMap doesn't say which buildings are homes. Tap a building or plot for its distances. Plot outlines: this information is subject to Crown copyright and database rights 2026 and is reproduced with the permission of HM Land Registry. The polygons (including the associated geometry, namely x, y co-ordinates) are subject to Crown copyright and database rights 2026 Ordnance Survey 100026316. <a href="https://use-land-property-data.service.gov.uk/datasets/inspire#conditions" target="_blank" rel="noopener">Conditions of use</a>.</small><span style="margin-top:4px"><button type="button" class="btn" id="bldList">List the closest buildings in view</button></span><div id="bldOut"></div></div>
       <div class="ovkey" id="key-sssi" hidden><span><i style="background:#26a69a;outline:2px solid #004d40"></i>SSSI: protected for wildlife or geology</span><small>Natural England SSSI boundaries. Islington Heronry SSSI is inside the site boundary; Setchey and Boughton Fen are within about 25 m of it. Tap a site for details and a link to its Natural England page.</small></div>
       <div class="ovkey" id="key-sw" hidden><span><i style="background:#4b4b9c"></i>High: more than 3.3% chance each year</span><span><i style="background:#9e9ed8"></i>Medium: 1% to 3.3%</span><span><i style="background:#cfe3ff"></i>Low: 0.1% to 1%</span><small>Environment Agency Risk of Flooding from Surface Water (NaFRA2), loaded live from the Environment Agency. Zoom in close (street level) to see it; the service doesn't draw it when zoomed out.</small></div>
       <div class="ovkey" id="key-heritage" hidden><span><i style="background:#67001f;border-radius:50%"></i>Listed building, Grade I</span><span><i style="background:#d6604d;border-radius:50%"></i>Listed building, Grade II*</span><span><i style="background:#f4a582;border-radius:50%"></i>Listed building, Grade II</span><span><i style="background:#8c510a"></i>Scheduled monument</span><span><i style="background:transparent;border:2px dashed #bf812d"></i>Registered park and garden</span><span><i style="background:transparent;border:2px dashed #6a3d9a"></i>Conservation area</span><small>Historic England National Heritage List and conservation areas, within 3 km of the site (the Scoping Report's study area). For undesignated archaeology and finds, search the <a href="https://www.heritage.norfolk.gov.uk/map-search" target="_blank" rel="noopener">Norfolk Heritage Explorer</a>.</small></div>
@@ -529,6 +543,41 @@ SW1A 2EG</div></dd>
       </ul>
       <p class="src">Addresses and deadlines: consultation leaflet p21–22; GOV.UK consultation page (checked 29 Oct 2026).</p>
     </section>
+    <section data-panel="evidence" hidden>
+      <h2>Add evidence <span class="await-chip">New</span></h2>
+      <p>Seen road damage, flooding or wildlife that the decision-makers should know about? Put it on the map with a photo, a date and a short description. The Parish Council can then draw on it in its responses, and once checked it appears on this map for everyone to see.</p>
+      <div class="awaitbox" id="evOff" hidden><p><b>Not switched on yet.</b> Evidence uploads are being set up. Please check back soon.</p></div>
+      <form class="ev-form" id="evForm" novalidate>
+        <label class="f">1. What is it?</label>
+        <div class="lt-grid">
+          <label class="lt-opt"><input type="radio" name="evcat" value="road"><span>Road disrepair and damage<small>Potholes, broken verges, damaged edges, heavy traffic damage</small></span></label>
+          <label class="lt-opt"><input type="radio" name="evcat" value="flood_houses"><span>Flooding: houses<small>Water in or around homes and gardens</small></span></label>
+          <label class="lt-opt"><input type="radio" name="evcat" value="flood_fields"><span>Flooding: fields<small>Standing water, waterlogged or flooded farmland</small></span></label>
+          <label class="lt-opt"><input type="radio" name="evcat" value="flood_vicinity"><span>Flooding: roads and surroundings<small>Flooded lanes, ditches, dykes, footpaths</small></span></label>
+          <label class="lt-opt"><input type="radio" name="evcat" value="wildlife"><span>Wildlife<small>Birds, mammals, plants, habitats. The location is shown only to about 1 km, to protect nests and rare species.</small></span></label>
+        </div>
+        <label class="f">2. Where?</label>
+        <div class="btnrow"><button type="button" class="btn primary" id="evPlace">Tap the map to place the pin</button><button type="button" class="btn" id="evGeo">Use my location</button></div>
+        <p class="note" id="evWhere">No pin placed yet. You can drag the pin to adjust it.</p>
+        <label class="f" for="evDate">3. When did you see it?</label>
+        <input type="date" id="evDate">
+        <label class="f" for="evDesc">4. What did you see?</label>
+        <textarea id="evDesc" rows="4" maxlength="1500" placeholder="e.g. Water across the road and into front gardens after heavy rain, about 30 cm deep at the lowest point, for two days."></textarea>
+        <p class="note">Please don't include names, phone numbers or other personal details.</p>
+        <label class="f" for="evPhoto">5. Photo</label>
+        <input type="file" id="evPhoto" accept="image/jpeg,image/png,image/webp,image/heic,image/*">
+        <img id="evPreview" alt="" hidden>
+        <p class="note">The photo is resized before upload, and its hidden location and camera data are removed.</p>
+        <input type="text" id="evHp" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
+        <label class="lt-opt" style="margin-top:12px"><input type="checkbox" id="evConsent"><span>I took this photo or have permission to share it. It doesn't show anyone's face or a car number plate. I agree that the photo, description, date and location can be published on this map once checked.</span></label>
+        <div class="btnrow" style="margin-top:12px"><button type="submit" class="btn primary" id="evSend">Send evidence</button></div>
+        <div class="ev-status" id="evStatus" hidden></div>
+      </form>
+      <h3 class="grp">See what others have sent</h3>
+      <div class="btnrow"><button type="button" class="btn" id="evShow">Show residents' evidence on the map</button><button type="button" class="btn" id="evCsv">Download checked evidence (CSV)</button></div>
+      <p class="note">Evidence is sent in by residents. It is checked for suitability before it appears, but it isn't verified, and it is not part of the official consultation. To make sure your point counts, also include it in your own response to the developer (see Respond) and, later, to the Planning Inspectorate.</p>
+      <p class="src">Submissions are stored with Supabase (EU). We don't ask for your name or contact details. To have an entry removed, contact the Parish Council.</p>
+    </section>
     <section data-panel="docs" hidden>
       <p>Official documents, all hosted online by their publishers. Large files are marked.</p>
       <h2>From the developer</h2>
@@ -595,6 +644,7 @@ SW1A 2EG</div></dd>
       <p><b>An independent, unofficial guide.</b> This viewer was made to help people find and understand public information about the proposed Longmarsh Green Energy scheme. It is not produced or endorsed by EPL Norfolk Limited, Evolution Power, the Planning Inspectorate, the government, or any council.</p>
       <p><b>Based on newly published documents.</b> The information comes from documents published in October 2026, early in the consultation. It may contain errors or omissions, and the scheme and documents will change. Sources were last checked on 29 October 2026.</p>
       <ul class="plain">
+        <li>Residents' evidence (Add evidence tab) is sent in by members of the public. It is checked for suitability before it appears, but it is not verified, and the views and photos are those of the people who sent them.</li>
         <li>Map shapes are traced from the developer's indicative plans and are approximate. Anything marked <b>awaiting information</b> is a presumption made for this viewer, not part of the proposals.</li>
         <li>The flood, farmland, heritage and wildlife layers are official Environment Agency, Defra, Historic England and Natural England data (some simplified for display), shown for context. Flood zones ignore flood defences, and the farmland grades are Defra's predictive map, loaded live from Defra. Use the official services for any specific site.</li>
         <li>Distances are approximate straight-line measurements. Do not rely on them for property, legal or financial decisions.</li>
@@ -828,7 +878,10 @@ const OV={
   nature:{url:'data/nature.geojson?v='+DV,attr:'SPA, SAC, Ramsar and ancient woodland: © Natural England copyright. Contains Ordnance Survey data © Crown copyright and database right (OGL)',loaded:false},
   sw:{attr:'Surface water: contains Environment Agency information © Environment Agency and/or database right (OGL)',loaded:true},
   sssi:{url:'data/sssi.geojson?v='+DV,attr:'SSSIs: © Natural England copyright. Contains Ordnance Survey data © Crown copyright and database right (OGL)',loaded:false},
-  alc:{attr:'Farmland grade: Predictive ALC Map for England © Defra copyright and/or database right (OGL)',loaded:true}};
+  alc:{attr:'Farmland grade: Predictive ALC Map for England © Defra copyright and/or database right (OGL)',loaded:true},
+  evid:{url:'',attr:'Residents\' evidence (checked, not verified)',loaded:false},
+  lbd:{url:'data/listed.geojson?v=20261115',attr:'Listed buildings: © Historic England 2026 (OGL)',loaded:false},
+  bld:{url:'data/buildings.geojson?v=20261115b',plots:'data/plots.geojson?v=20261115b',attr:'Buildings: © OpenStreetMap contributors (ODbL)',lr:'Plot boundaries: HM Land Registry, Crown copyright 2026; polygons Crown copyright 2026 Ordnance Survey 100026316',loaded:false}};
 const ALC_WMS='https://environment.data.gov.uk/spatialdata/predictive-alc-england-raster/wms?service=WMS&version=1.3.0&request=GetMap&layers=Predictive_ALC_England_Raster&styles=&format=image/png&transparent=true&crs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}';
 const ALC_GFI='https://environment.data.gov.uk/spatialdata/predictive-alc-england/wms?service=WMS&version=1.3.0&request=GetFeatureInfo&layers=Predictive_ALC_England&query_layers=Predictive_ALC_England&styles=&format=image/png&info_format=application/json&crs=EPSG:3857&width=3&height=3&i=1&j=1&bbox=';
 const SW_WMS='https://environment.data.gov.uk/spatialdata/nafra2-risk-of-flooding-from-surface-water/wms?service=WMS&version=1.3.0&request=GetMap&layers=rofsw&styles=&format=image/png&transparent=true&crs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}';
@@ -863,12 +916,30 @@ function addOfficialLayers(){
   map.addLayer({id:'sssi-line',type:'line',source:'sssi',layout:{visibility:'none'},paint:{'line-color':'#004d40','line-width':['interpolate',['linear'],['zoom'],9,1.2,15,3]}});
   map.addLayer({id:'sssi-pt',type:'circle',source:'sssi-pt',maxzoom:13,layout:{visibility:'none'},paint:{'circle-radius':['case',['<',['get','dist_m'],3000],6,4],'circle-color':'#26a69a','circle-stroke-color':'#004d40','circle-stroke-width':2}});
   map.addLayer({id:'sssi-lbl',type:'symbol',source:'sssi-lb',filter:['<',['get','dist_m'],3000],layout:{visibility:'none','text-field':['get','name'],'text-font':['Open Sans Semibold'],'text-size':12,'text-offset':[0,1.1],'text-anchor':'top'},paint:{'text-color':'#00332b','text-halo-color':'#ffffff','text-halo-width':1.8}});
+  map.addSource('bld',{type:'geojson',data:empty,attribution:OV.bld.attr});
+  map.addSource('plots',{type:'geojson',data:empty,attribution:OV.bld.lr});
+  const PC=v=>['step',v,'#7f0000',50,'#d7301f',100,'#fc8d59',250,'#fdd49e',500,'#bdbdbd'];
+  map.addLayer({id:'plot-fill',type:'fill',source:'plots',minzoom:12,layout:{visibility:'none'},paint:{'fill-color':PC(['get','gd']),'fill-opacity':0.18}});
+  map.addLayer({id:'plot-line',type:'line',source:'plots',minzoom:13,layout:{visibility:'none'},paint:{'line-color':PC(['get','gd']),'line-width':['interpolate',['linear'],['zoom'],13,0.8,17,2.2],'line-dasharray':[3,1.5]}});
+  map.addLayer({id:'bld-fill',type:'fill',source:'bld',minzoom:12,layout:{visibility:'none'},paint:{'fill-color':PC(['coalesce',['get','gd'],['get','d']]),'fill-opacity':0.92}});
+  map.addLayer({id:'bld-line',type:'line',source:'bld',minzoom:14,layout:{visibility:'none'},paint:{'line-color':'#333','line-width':0.6,'line-opacity':0.7}});
+  map.addSource('evid',{type:'geojson',data:empty,attribution:OV.evid.attr});
+  const EC=['match',['get','category'],'road','#6a51a3','flood_houses','#08519c','flood_fields','#3182bd','flood_vicinity','#9ecae1','wildlife','#238b45','#555'];
+  map.addLayer({id:'evid-halo',type:'circle',source:'evid',filter:['==',['get','category'],'wildlife'],layout:{visibility:'none'},paint:{'circle-radius':['interpolate',['exponential',2],['zoom'],10,12,14,190,16,760],'circle-color':'#238b45','circle-opacity':0.12,'circle-stroke-color':'#238b45','circle-stroke-width':1,'circle-stroke-opacity':0.5}});
+  map.addLayer({id:'evid-pt',type:'circle',source:'evid',layout:{visibility:'none'},paint:{'circle-radius':['interpolate',['linear'],['zoom'],9,5,15,9],'circle-color':EC,'circle-stroke-color':'#fff','circle-stroke-width':2}});
+  map.addSource('lbd',{type:'geojson',data:empty,attribution:OV.lbd.attr});
+  const GC=['match',['get','grade'],'I','#67001f','II*','#d6604d','#f4a582'];
+  map.addLayer({id:'lbd-fill',type:'fill',source:'lbd',filter:['==',['get','outline'],1],layout:{visibility:'none'},paint:{'fill-color':PC(['get','c']),'fill-opacity':0.9}});
+  map.addLayer({id:'lbd-line',type:'line',source:'lbd',filter:['==',['get','outline'],1],layout:{visibility:'none'},paint:{'line-color':GC,'line-width':2.5}});
+  map.addLayer({id:'lbd-pt',type:'circle',source:'lbd',filter:['!=',['get','outline'],1],layout:{visibility:'none'},paint:{'circle-radius':['interpolate',['linear'],['zoom'],10,['match',['get','grade'],'I',6,'II*',5,3.5],16,['match',['get','grade'],'I',11,'II*',9,7]],'circle-color':PC(['get','c']),'circle-stroke-color':GC,'circle-stroke-width':['match',['get','grade'],'I',3,'II*',2.5,2]}});
+  map.addLayer({id:'lbd-lbl',type:'symbol',source:'lbd',minzoom:14.5,filter:['!=',['get','outline'],1],layout:{visibility:'none','text-field':['get','name'],'text-font':['Open Sans Semibold'],'text-size':11,'text-offset':[0,1.2],'text-anchor':'top','text-max-width':10},paint:{'text-color':'#3a0010','text-halo-color':'#ffffff','text-halo-width':1.6}});
 }
 async function setOverlay(name,on){
   const o=OV[name];
   if(on&&!o.loaded){
-    try{toast({flood:'Loading Environment Agency flood zones…',sssi:'Loading Natural England SSSIs…',heritage:'Loading Historic England heritage data…',nature:'Loading Natural England wildlife sites…'}[name]||'Loading…');
-      const d=await fetch(o.url).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});map.getSource(name).setData(d);o.loaded=true;
+    try{toast({flood:'Loading Environment Agency flood zones…',sssi:'Loading Natural England SSSIs…',heritage:'Loading Historic England heritage data…',nature:'Loading Natural England wildlife sites…',lbd:'Loading listed buildings…',evid:'Loading residents\' evidence…',bld:'Loading building outlines…'}[name]||'Loading…');
+      let d;if(name==='evid'){d=await evFetch()}else d=await fetch(o.url).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});map.getSource(name).setData(d);o.loaded=true;
+      if(name==='bld')fetch(o.plots).then(r=>r.json()).then(j=>map.getSource('plots').setData(j)).catch(()=>{});
       if(name==='sssi'){const pts=d.features.map(f=>{let best=null,ba=-1;const polys=f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.coordinates;
           for(const p of polys){const r=p[0];let a=0,cx=0,cy=0;for(let i=0;i<r.length-1;i++){const c=r[i][0]*r[i+1][1]-r[i+1][0]*r[i][1];a+=c;cx+=(r[i][0]+r[i+1][0])*c;cy+=(r[i][1]+r[i+1][1])*c}
             if(Math.abs(a)>ba&&a!==0){ba=Math.abs(a);best=[cx/(3*a),cy/(3*a)]}}
@@ -876,11 +947,12 @@ async function setOverlay(name,on){
         map.getSource('sssi-pt').setData({type:'FeatureCollection',features:pts});map.getSource('sssi-lb').setData({type:'FeatureCollection',features:pts})}}
     catch(err){toast('Could not load this layer. If you opened the file directly, use the online viewer.');const i=document.querySelector(`[data-ov="${name}"]`);if(i)i.checked=false;return}
   }
-  const IDS={flood:['flood-fill','flood-line'],sssi:['sssi-fill','sssi-line','sssi-pt','sssi-lbl'],alc:['alc-fill'],sw:['sw-fill'],heritage:['ca-fill','ca-line','pg-fill','pg-line','sm-fill','sm-line','lb-pt'],nature:['nat-fill','nat-line','aw-fill']};
+  const IDS={flood:['flood-fill','flood-line'],sssi:['sssi-fill','sssi-line','sssi-pt','sssi-lbl'],alc:['alc-fill'],sw:['sw-fill'],heritage:['ca-fill','ca-line','pg-fill','pg-line','sm-fill','sm-line','lb-pt'],nature:['nat-fill','nat-line','aw-fill'],bld:['plot-fill','plot-line','bld-fill','bld-line'],lbd:['lbd-fill','lbd-line','lbd-pt','lbd-lbl'],evid:['evid-halo','evid-pt']};
   const ids=IDS[name];
   ids.forEach(id=>map.setLayoutProperty(id,'visibility',on?'visible':'none'));
   const i=document.querySelector(`[data-ov="${name}"]`);if(i)i.checked=on;
   const k=document.getElementById('key-'+name);if(k)k.hidden=!on;
+  if(name==='bld'&&on&&map.getZoom()<12.5)toast('Zoom in to a village to see the buildings.');
 }
 document.addEventListener('change',e=>{const i=e.target.closest('[data-ov]');if(i)setOverlay(i.dataset.ov,i.checked)});
 
@@ -998,12 +1070,142 @@ function layerInfo(kind){
   if(kind==='ohl_50_line'||kind==='ohl_35_line')return LAYERS.find(l=>l.k==='ohl_line');
   return LAYERS.find(l=>l.k===kind);
 }
+/* ---------- residents' evidence (Supabase: insert-only for the public, shown after a moderator approves) ---------- */
+// Fill these two in from Supabase: Project Settings -> API -> Project URL and the "anon public" key. The anon key is meant to be public.
+const EVID={url:'https://zzxiabnpwzsrfwolaqbv.supabase.co',key:'sb_publishable_2ixea0AWNThOAQP-sQrdVw_UqVwc2ES'};
+const EVLAB={road:'Road disrepair and damage',flood_houses:'Flooding: houses',flood_fields:'Flooding: fields',flood_vicinity:'Flooding: roads and surroundings',wildlife:'Wildlife'};
+const EV={placing:false,marker:null,lon:null,lat:null};
+const evOn=()=>!!(EVID.url&&EVID.key);
+// New 'sb_publishable_' keys go in the apikey header only; older 'anon' JWT keys also go in Authorization.
+const evH=()=>EVID.key.startsWith('eyJ')?{apikey:EVID.key,Authorization:'Bearer '+EVID.key}:{apikey:EVID.key};
+async function evFetch(){
+  if(!evOn())return {type:'FeatureCollection',features:[]};
+  const r=await fetch(EVID.url+'/rest/v1/evidence_public?select=*&order=observed_on.desc',{headers:evH()});
+  if(!r.ok)throw new Error(r.status);
+  const rows=await r.json();
+  return {type:'FeatureCollection',features:rows.map(x=>({type:'Feature',properties:{...x,photoUrl:EVID.url+'/storage/v1/object/public/evidence/'+x.photo},geometry:{type:'Point',coordinates:[x.lon,x.lat]}}))};
+}
+function evPopup(lngLat,p){
+  const dt=p.observed_on?new Date(p.observed_on+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}):'';
+  popup.setLngLat(lngLat).setHTML(`<b>${esc(EVLAB[p.category]||'Evidence')}</b><div><span class="pub-chip" style="color:#6a51a3;border-color:#6a51a3">Resident's evidence</span></div>
+   ${p.photo?`<a href="${esc(p.photoUrl)}" target="_blank" rel="noopener"><img class="ev-photo" src="${esc(p.photoUrl)}" alt="Photo sent in by a resident"></a>`:''}
+   <dl class="dl"><dt>Seen on</dt><dd>${esc(dt)}</dd></dl><p>${esc(p.description||'')}</p>
+   ${p.blurred===true||p.blurred==='true'?'<p><i>Location shown only to about 1 km, to protect wildlife.</i></p>':''}
+   <p class="src">Sent in by a resident and checked for suitability before publishing. Not verified.</p>`).addTo(map);
+}
+function evSetPin(lon,lat){
+  EV.lon=lon;EV.lat=lat;EV.placing=false;map.getCanvas().style.cursor='';
+  if(!EV.marker){const el=document.createElement('div');el.className='ev-pin';EV.marker=new maplibregl.Marker({element:el,draggable:true,anchor:'bottom'}).setLngLat([lon,lat]).addTo(map);
+    EV.marker.on('dragend',()=>{const ll=EV.marker.getLngLat();EV.lon=ll.lng;EV.lat=ll.lat;evWhere()})}
+  else EV.marker.setLngLat([lon,lat]);
+  evWhere();$('#evPlace').textContent='Move the pin (tap the map again)';
+  if($('#panel').classList.contains('min'))$('#panel').classList.remove('min');showTab('evidence');
+}
+function evWhere(){const pt=P(EV.lon,EV.lat);const n=VILL.map(x=>({n:x.name,d:Math.hypot(P(x.lon,x.lat)[0]-pt[0],P(x.lon,x.lat)[1]-pt[1])})).sort((a,b)=>a.d-b.d)[0];const v=n&&n.d<2000?n.n:'';$('#evWhere').textContent=`Pin placed${v?' in or near '+v:''} (${EV.lat.toFixed(5)}, ${EV.lon.toFixed(5)}). Drag it to adjust.`}
+async function evPhoto(file){
+  let bmp;try{bmp=await createImageBitmap(file,{imageOrientation:'from-image'})}catch(e){throw new Error('That photo format can\'t be read in this browser. Please choose a JPEG or PNG.')}
+  const k=Math.min(1,1600/Math.max(bmp.width,bmp.height));const c=document.createElement('canvas');c.width=Math.round(bmp.width*k);c.height=Math.round(bmp.height*k);
+  c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+  return await new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(new Error('Could not prepare the photo.')),'image/jpeg',0.82));
+}
+function evStatus(msg,ok){const el=$('#evStatus');el.hidden=false;el.innerHTML=msg;el.style.background=ok?'#e3f1e6':'var(--chip)'}
+(function evInit(){
+  const today=new Date().toISOString().slice(0,10);$('#evDate').max=today;$('#evDate').value=today;
+  if(!evOn()){$('#evOff').hidden=false;$('#evSend').disabled=true}
+  $('#evPlace').onclick=()=>{EV.placing=true;map.getCanvas().style.cursor='crosshair';toast('Tap the map where you saw it.');if(window.innerWidth<760)$('#panel').classList.add('min')};
+  $('#evGeo').onclick=()=>{if(!navigator.geolocation)return toast('Location isn\'t available in this browser.');navigator.geolocation.getCurrentPosition(p=>{evSetPin(p.coords.longitude,p.coords.latitude);map.flyTo({center:[p.coords.longitude,p.coords.latitude],zoom:Math.max(map.getZoom(),15)})},()=>toast('Could not get your location.'),{enableHighAccuracy:true,timeout:10000})};
+  $('#evPhoto').onchange=()=>{const f=$('#evPhoto').files[0];const im=$('#evPreview');if(f){im.src=URL.createObjectURL(f);im.hidden=false}else im.hidden=true};
+  $('#evShow').onclick=()=>{const cb=document.querySelector('[data-ov="evid"]');if(!cb.checked)cb.click();showTab('layers')};
+  $('#evCsv').onclick=async()=>{
+    if(!evOn())return toast('Evidence uploads aren\'t switched on yet.');
+    try{const fc=await evFetch();const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+      const csv=['category,observed_on,description,latitude,longitude,location_blurred,photo_url,submitted']
+        .concat(fc.features.map(f=>{const p=f.properties;return [EVLAB[p.category],p.observed_on,p.description,p.lat,p.lon,p.blurred?'yes (about 1 km)':'no',p.photoUrl,p.created_at].map(q).join(',')})).join('\n');
+      const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='longmarsh-residents-evidence.csv';a.click();
+    }catch(e){toast('Could not download the evidence just now.')}
+  };
+  $('#evForm').onsubmit=async ev=>{
+    ev.preventDefault();if(!evOn())return;
+    if($('#evHp').value)return;
+    const cat=(document.querySelector('input[name=evcat]:checked')||{}).value;
+    const desc=$('#evDesc').value.trim(),date=$('#evDate').value,file=$('#evPhoto').files[0];
+    const miss=[];if(!cat)miss.push('what it is');if(EV.lon==null)miss.push('a pin on the map');if(!date)miss.push('the date');if(desc.length<10)miss.push('a description (at least a sentence)');if(!file)miss.push('a photo');if(!$('#evConsent').checked)miss.push('the agreement box');
+    if(EV.lon!=null&&(EV.lon<0.1||EV.lon>0.7||EV.lat<52.5||EV.lat>52.8))miss.push('a pin within the Longmarsh area');
+    if(miss.length)return evStatus('Please add '+miss.join(', ')+'.');
+    $('#evSend').disabled=true;evStatus('Preparing the photo…');
+    try{
+      const blob=await evPhoto(file);if(blob.size>3*1024*1024)throw new Error('The photo is still too large after resizing. Please try another.');
+      const id=(crypto.randomUUID?crypto.randomUUID():([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16)));
+      const name=id+'.jpg',H=evH();
+      evStatus('Uploading the photo…');
+      const up=await fetch(EVID.url+'/storage/v1/object/evidence/'+name,{method:'POST',headers:{...H,'Content-Type':'image/jpeg','x-upsert':'false'},body:blob});
+      if(!up.ok)throw new Error('The photo upload failed ('+up.status+').');
+      evStatus('Sending…');
+      const r=await fetch(EVID.url+'/rest/v1/evidence',{method:'POST',headers:{...H,'Content-Type':'application/json',Prefer:'return=minimal'},
+        body:JSON.stringify({category:cat,observed_on:date,description:desc,lon:+EV.lon.toFixed(6),lat:+EV.lat.toFixed(6),photo:name,consent:true})});
+      if(!r.ok)throw new Error('Sending failed ('+r.status+').');
+      evStatus('<b>Thank you.</b> Your evidence has been received. It will appear on the map once it has been checked. Please also mention it in your own consultation response.',true);
+      $('#evForm').reset();$('#evDate').value=new Date().toISOString().slice(0,10);$('#evPreview').hidden=true;if(EV.marker){EV.marker.remove();EV.marker=null}EV.lon=EV.lat=null;$('#evWhere').textContent='No pin placed yet. You can drag the pin to adjust it.';$('#evPlace').textContent='Tap the map to place the pin';
+    }catch(e){evStatus('Sorry, that didn\'t work: '+esc(e.message)+' Please try again.')}
+    finally{$('#evSend').disabled=!evOn()}
+  };
+})();
+/* ---------- listed buildings with distances (Historic England points matched to OpenStreetMap outlines; see README) ---------- */
+function lbdPopup(lngLat,p){
+  const from=+p.m?'its building outline':'its list entry point';
+  popup.setLngLat(lngLat).setHTML(`<b>${esc(nice(p.name||''))}</b><div><span class="pub-chip" style="color:#67001f;border-color:#67001f">Listed building, Grade ${esc(p.grade)}</span></div>
+   <dl class="dl">${p.gd!=null?`<dt>Plot or garden boundary to nearest ${esc(BLAB[p.gnk]||'')}</dt><dd>${bfmt(+p.gd)}</dd>`:''}<dt>Building to nearest ${esc(BLAB[p.nk]||'')}</dt><dd>${bfmt(+p.d)}</dd>${p.nk!=='panels'?`<dt>Nearest solar panel area</dt><dd>${bfmt(+p.dp)}</dd>`:''}${+p.de<5000?`<dt>Eastern substation &amp; batteries</dt><dd>${bfmt(+p.de)}</dd>`:''}<dt>Site boundary</dt><dd>${bfmt(+p.ds)}</dd></dl>
+   <p>Measured from ${from} to the scheme areas traced from the Scoping Report figures, so allow 20 m or so either way. Harm to setting depends on more than distance: views to and from the building, its history and how it is experienced.</p>
+   ${p.entry?`<p><a href="https://historicengland.org.uk/listing/the-list/list-entry/${esc(String(p.entry))}" target="_blank" rel="noopener">Historic England list entry ${esc(String(p.entry))}</a></p>`:''}
+   <p class="src">Historic England, National Heritage List for England${+p.m?'; building outline © OpenStreetMap contributors':''}${p.gd!=null?'; plot outline HM Land Registry and Ordnance Survey, Crown copyright and database rights 2026':''}.</p>`).addTo(map);
+}
+/* ---------- buildings: OpenStreetMap outlines with distances to the scheme worked out in advance (see README) ---------- */
+const BLAB={panels:'solar panel area',east:'Eastern substation & batteries',dc:'data centre zone',walpole:'Walpole substation works',ohl:'overhead line corridor'};
+const bfmt=d=>d<1?'inside or touching it (as drawn)':d<1000?'about '+Math.max(5,Math.round(d/5)*5)+' m':'about '+(d/1000).toFixed(1)+' km';
+function bldPopup(lngLat,p){
+  const nm=p.nm?esc(p.nm):'Building';
+  popup.setLngLat(lngLat).setHTML(`<b>${nm}${p.v?' – '+esc(p.v):''}</b><div><span class="pub-chip" style="color:#1f5f8b;border-color:#1f5f8b">OpenStreetMap building${p.t&&p.t!=='yes'?': '+esc(p.t.replace(/_/g,' ')):''}</span></div>
+   <dl class="dl">${p.gd!=null?`<dt>Plot or garden boundary to nearest ${esc(BLAB[p.gnk]||'')}</dt><dd>${bfmt(+p.gd)}</dd>`:''}<dt>Building to nearest solar panel area</dt><dd>${bfmt(+p.dp)}</dd>${p.de!=null&&+p.de<5000?`<dt>Eastern substation &amp; batteries</dt><dd>${bfmt(+p.de)}</dd>`:''}${p.nk!=='panels'&&p.nk!=='east'?`<dt>Nearest: ${esc(BLAB[p.nk]||'')}</dt><dd>${bfmt(+p.d)}</dd>`:''}</dl>
+   <p>${p.gd!=null?'The plot boundary is HM Land Registry\'s registered title outline, which is indicative rather than exact. ':'No small registered title was found around this building (it may be unregistered, or part of a farm title), so only the building is measured. '}Measured from the outline to the scheme areas traced from the Scoping Report figures, so allow 20 m or so either way. The panel layout inside each area hasn't been published. The Scoping Report's design commitments (4.2.1) include at least 30 m between homes and the panels, and at least 100 m to inverters and transformers.</p>
+   <p class="src">Building outline © OpenStreetMap contributors. It may not be a home, and OpenStreetMap may be missing some buildings.${p.gd!=null?' Plot outline: HM Land Registry and Ordnance Survey, Crown copyright and database rights 2026.':''}</p>`).addTo(map);
+}
+document.addEventListener('click',e=>{
+  {const g=e.target.closest('[data-goto]');if(g){e.preventDefault();showTab(g.dataset.goto)}}
+  if(e.target.id==='lbdList'){
+    ldata('lbd',OV.lbd.url).then(d=>{const fs=(d.features||[]).filter(f=>!f.properties.outline);
+    fs.sort((a,b)=>a.properties.c-b.properties.c);
+    $('#lbdOut').innerHTML=fs.length?`<p style="margin:6px 0 4px">Closest of ${fs.length} listed buildings within 3 km:</p><ol style="margin:0;padding-left:20px">${fs.slice(0,15).map(f=>{const p=f.properties;return `<li><a href="#" data-bfly="${p.lon},${p.lat}">${esc(nice(p.name))} (Grade ${esc(p.grade)})</a>: ${p.gd!=null?'plot boundary ':''}${+p.c<1?'touching the '+esc(BLAB[p.gd!=null?p.gnk:p.nk]||'')+' as drawn':bfmt(+p.c)+' from the '+esc(BLAB[p.gd!=null?p.gnk:p.nk]||'')}</li>`}).join('')}</ol>`:'<p>Could not load the listed buildings.</p>'});
+  }
+  if(e.target.id==='bldList'){
+    const seen=new Set(),rows=[];
+    for(const f of (map.getLayer('bld-fill')?map.queryRenderedFeatures({layers:['bld-fill']}):[])){const p=f.properties;if(seen.has(p.id))continue;seen.add(p.id);rows.push(p)}
+    const E=p=>p.gd!=null?+p.gd:+p.d;rows.sort((a,b)=>E(a)-E(b));const top=rows.slice(0,15);
+    $('#bldOut').innerHTML=top.length?`<p style="margin:6px 0 4px">${rows.length} buildings in view. Closest to the scheme:</p><ol style="margin:0;padding-left:20px">${top.map(p=>`<li><a href="#" data-bfly="${p.lon},${p.lat}">${p.nm?esc(p.nm)+': ':''}${p.gd!=null?(+p.gd<1?'plot touches or overlaps the '+esc(BLAB[p.gnk]||'')+' as drawn':'plot boundary '+bfmt(+p.gd)+' from the '+esc(BLAB[p.gnk]||'')):(+p.d<1?'touching or inside the '+esc(BLAB[p.nk]||'')+' as drawn':bfmt(+p.d)+' from the '+esc(BLAB[p.nk]||''))}${p.v?', '+esc(p.v):''}</a></li>`).join('')}</ol>`:'<p>Turn the layer on and zoom in to a village first, then try again.</p>';
+  }
+  const a=e.target.closest('[data-bfly]');if(a){e.preventDefault();const [lon,lat]=a.dataset.bfly.split(',').map(Number);map.flyTo({center:[lon,lat],zoom:Math.max(map.getZoom(),17)});if(window.innerWidth<760&&typeof closePanel==='function')closePanel()}
+});
+
 map.on('click',e=>{
+  if(EV.placing){evSetPin(e.lngLat.lng,e.lngLat.lat);return}
+  if(map.getLayer('evid-pt')&&map.getLayoutProperty('evid-pt','visibility')==='visible'){
+    const v=map.queryRenderedFeatures([[e.point.x-6,e.point.y-6],[e.point.x+6,e.point.y+6]],{layers:['evid-pt']})[0];
+    if(v){evPopup(e.lngLat,v.properties);return}
+  }
   if(map.getLayer('sssi-fill')&&map.getLayoutProperty('sssi-fill','visibility')==='visible'){
     const ss=map.queryRenderedFeatures([[e.point.x-6,e.point.y-6],[e.point.x+6,e.point.y+6]],{layers:['sssi-pt','sssi-fill']})[0];
     if(ss){const p=ss.properties,d=+p.dist_m;
       popup.setLngLat(e.lngLat).setHTML(`<b>${esc(p.name)}</b><div><span class="pub-chip" style="color:#004d40;border-color:#004d40">Site of Special Scientific Interest</span></div><p>${d<5?'Inside the site boundary.':'About '+(d<1000?Math.round(d/5)*5+' m':(d/1000).toFixed(1)+' km')+' from the site boundary (measured on this map).'}</p>${p.note?`<p>${esc(p.note)}</p>`:''}<p><a href="https://designatedsites.naturalengland.org.uk/SiteDetail.aspx?SiteCode=S${esc(p.url)}" target="_blank" rel="noopener">Natural England site page: citation and condition</a></p><p class="src">Natural England, SSSI (England) boundaries.</p>`).addTo(map);
       report(e.lngLat.lng,e.lngLat.lat,p.name);return}
+  }
+  if(map.getLayer('lbd-pt')&&map.getLayoutProperty('lbd-pt','visibility')==='visible'){
+    const l=map.queryRenderedFeatures([[e.point.x-5,e.point.y-5],[e.point.x+5,e.point.y+5]],{layers:['lbd-pt','lbd-fill']})[0];
+    if(l){lbdPopup(e.lngLat,l.properties);return}
+  }
+  if(map.getLayer('bld-fill')&&map.getLayoutProperty('bld-fill','visibility')==='visible'&&map.getZoom()>=12){
+    const b=map.queryRenderedFeatures([[e.point.x-2,e.point.y-2],[e.point.x+2,e.point.y+2]],{layers:['bld-fill']})[0];
+    if(b){bldPopup(e.lngLat,b.properties);return}
+    const pl=map.queryRenderedFeatures(e.point,{layers:['plot-fill']})[0];
+    if(pl){const q=pl.properties;popup.setLngLat(e.lngLat).setHTML(`<b>Plot or garden</b><div><span class="pub-chip" style="color:#1f5f8b;border-color:#1f5f8b">HM Land Registry title outline</span></div><dl class="dl"><dt>Boundary to nearest ${esc(BLAB[q.gnk]||'')}</dt><dd>${bfmt(+q.gd)}</dd></dl><p>Registered title outlines are indicative, not exact legal boundaries. Tap the building inside for more.</p><p class="src">HM Land Registry INSPIRE Index Polygons. Crown copyright and database rights 2026, reproduced with the permission of HM Land Registry; polygons Crown copyright and database rights 2026 Ordnance Survey 100026316.</p>`).addTo(map);return}
   }
   const of=map.getLayer('other-fill')&&map.getLayoutProperty('other-fill','visibility')==='visible'?map.queryRenderedFeatures(e.point,{layers:['other-fill']})[0]:null;
   if(of){const o=OTHER[of.properties.ref];

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Evidence Moderation</title>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--ink:#1d2421;--muted:#5d6762;--line:#d9dcd6;--accent:#1f6b4f;--warn:#a33b20;--chip:#eef1ec}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141816;--card:#1d2320;--ink:#e8ece9;--muted:#9aa59f;--line:#333b37;--accent:#5cc196;--warn:#ff8a6b;--chip:#252c29}}
+:root[data-theme="dark"]{--bg:#141816;--card:#1d2320;--ink:#e8ece9;--muted:#9aa59f;--line:#333b37;--accent:#5cc196;--warn:#ff8a6b;--chip:#252c29}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+header h1{font-size:18px;margin:0;flex:1}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px}
+input[type=email],input[type=password],textarea{width:100%;font:inherit;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+button{font:inherit;font-size:15px;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.danger{border-color:var(--warn);color:var(--warn)}
+button.danger.sure{background:var(--warn);color:#fff}
+button:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.muted{color:var(--muted);font-size:14px}
+.tabs{display:flex;gap:6px;margin:4px 0 12px}
+.tabs button[aria-selected=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+#map{height:320px;border-radius:10px;border:1px solid var(--line);margin-bottom:12px}
+.item{display:grid;grid-template-columns:220px 1fr;gap:14px}
+.item img{width:100%;max-height:220px;object-fit:cover;border-radius:8px;cursor:zoom-in;background:var(--chip)}
+.chip{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid currentColor;margin-right:6px}
+.item h3{margin:2px 0 6px;font-size:16px}
+.item p{margin:6px 0}
+#msg{margin:8px 0}
+@media (max-width:640px){.item{grid-template-columns:1fr}}
+dialog{border:0;padding:0;background:transparent;max-width:95vw}
+dialog img{max-width:95vw;max-height:90vh;border-radius:8px}
+</style>
+</head>
+<body>
+<header><h1>Longmarsh viewer · evidence moderation</h1><span class="muted" id="who"></span><button id="out" hidden>Sign out</button></header>
+<main>
+  <section class="card" id="signin">
+    <h2 style="margin-top:0;font-size:17px">Sign in</h2>
+    <p class="muted">Only listed moderators can see or approve submissions.</p>
+    <label for="em">Email</label>
+    <input type="email" id="em" autocomplete="email">
+    <div class="row" style="margin-top:10px"><button class="primary" id="link">Email me a sign-in link</button></div>
+    <details style="margin-top:12px"><summary class="muted">Sign in with a password instead</summary>
+      <label for="pw" style="display:block;margin-top:8px">Password</label>
+      <input type="password" id="pw" autocomplete="current-password">
+      <div class="row" style="margin-top:10px"><button id="pwgo">Sign in</button></div>
+    </details>
+    <div id="smsg" class="muted" style="margin-top:10px"></div>
+  </section>
+  <section id="mod" hidden>
+    <div class="tabs" role="tablist"><button data-t="wait" aria-selected="true">Waiting <span id="nw"></span></button><button data-t="pub" aria-selected="false">Published <span id="np"></span></button><button id="reload" style="margin-left:auto">Refresh</button></div>
+    <div id="map"></div>
+    <div id="msg" class="muted"></div>
+    <div id="list"></div>
+  </section>
+</main>
+<dialog id="big"><img alt=""></dialog>
+<script>
+const U='https://zzxiabnpwzsrfwolaqbv.supabase.co', K='sb_publishable_2ixea0AWNThOAQP-sQrdVw_UqVwc2ES';
+const HERE=location.origin+location.pathname;
+const LAB={road:'Road disrepair and damage',flood_houses:'Flooding: houses',flood_fields:'Flooding: fields',flood_vicinity:'Flooding: roads and surroundings',wildlife:'Wildlife'};
+const COL={road:'#6a51a3',flood_houses:'#08519c',flood_fields:'#3182bd',flood_vicinity:'#6baed6',wildlife:'#238b45'};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let S=null, VIEW='wait', ROWS=[], map=null, markers=[];
+const store={get(){try{return JSON.parse(localStorage.getItem('lm-mod')||'null')}catch(e){return null}},set(v){try{v?localStorage.setItem('lm-mod',JSON.stringify(v)):localStorage.removeItem('lm-mod')}catch(e){}}};
+function keep(t){S={at:t.access_token,rt:t.refresh_token,exp:Date.now()+((+t.expires_in||3600)-60)*1000,email:(t.user&&t.user.email)||S&&S.email||''};store.set(S)}
+async function auth(path,body){const r=await fetch(U+'/auth/v1/'+path,{method:'POST',headers:{apikey:K,'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.msg||j.error_description||j.message||('error '+r.status));return j}
+async function token(){if(!S)throw new Error('Not signed in');if(Date.now()>S.exp){keep(await auth('token?grant_type=refresh_token',{refresh_token:S.rt}))}return S.at}
+async function api(path,opt={}){const t=await token();const r=await fetch(U+path,{...opt,headers:{apikey:K,Authorization:'Bearer '+t,...(opt.headers||{})}});if(r.status===401){store.set(null);S=null;show();throw new Error('Signed out')}
+  if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.message||('error '+r.status))}return r.status===204?null:r.json().catch(()=>null)}
+const photo=n=>U+'/storage/v1/object/public/evidence/'+encodeURIComponent(n);
+
+$('#link').onclick=async()=>{const em=$('#em').value.trim();if(!em)return $('#smsg').textContent='Enter your email first.';
+  $('#link').disabled=true;try{await auth('otp?redirect_to='+encodeURIComponent(HERE),{email:em,create_user:true});$('#smsg').textContent='Check your inbox for a sign-in link from Supabase, and open it on this device.'}catch(e){$('#smsg').textContent='Could not send the link: '+e.message}finally{$('#link').disabled=false}};
+$('#pwgo').onclick=async()=>{try{const t=await auth('token?grant_type=password',{email:$('#em').value.trim(),password:$('#pw').value});keep(t);$('#pw').value='';show()}catch(e){$('#smsg').textContent='Sign-in failed: '+e.message}};
+$('#out').onclick=async()=>{try{await fetch(U+'/auth/v1/logout',{method:'POST',headers:{apikey:K,Authorization:'Bearer '+S.at}})}catch(e){}S=null;store.set(null);show()};
+document.querySelector('.tabs').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;VIEW=b.dataset.t;document.querySelectorAll('[data-t]').forEach(x=>x.setAttribute('aria-selected',x===b));render()};
+$('#reload').onclick=()=>load();
+$('#big').onclick=()=>$('#big').close();
+
+async function show(){
+  const on=!!S;$('#signin').hidden=on;$('#mod').hidden=!on;$('#out').hidden=!on;$('#who').textContent=on?S.email:'';
+  if(!on)return;
+  try{const ok=await api('/rest/v1/rpc/is_moderator',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    if(ok!==true){$('#msg').innerHTML='<b>This account isn\'t on the moderator list.</b> Ask the site owner to add your email address.';$('#list').innerHTML='';return}}
+  catch(e){$('#msg').textContent='Could not check moderator access: '+e.message;return}
+  if(!map){map=new maplibregl.Map({container:'map',style:{version:8,sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors'}},layers:[{id:'osm',type:'raster',source:'osm'}]},center:[0.4,52.66],zoom:9.6});map.addControl(new maplibregl.NavigationControl(),'top-right')}
+  load();
+}
+async function load(){
+  $('#msg').textContent='Loading…';
+  try{ROWS=await api('/rest/v1/evidence?select=*&order=created_at.desc');$('#msg').textContent='';render()}catch(e){$('#msg').textContent='Could not load: '+e.message}
+}
+function render(){
+  const w=ROWS.filter(r=>!r.approved),p=ROWS.filter(r=>r.approved);$('#nw').textContent='('+w.length+')';$('#np').textContent='('+p.length+')';
+  const rows=VIEW==='wait'?w:p;
+  markers.forEach(m=>m.remove());markers=[];
+  rows.forEach(r=>{const el=document.createElement('div');el.style.cssText=`width:16px;height:16px;border-radius:50%;background:${COL[r.category]||'#555'};border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4);cursor:pointer`;el.onclick=()=>document.getElementById('it-'+r.id)?.scrollIntoView({behavior:'smooth',block:'center'});markers.push(new maplibregl.Marker({element:el}).setLngLat([r.lon,r.lat]).addTo(map))});
+  if(rows.length){const b=new maplibregl.LngLatBounds();rows.forEach(r=>b.extend([r.lon,r.lat]));map.fitBounds(b,{padding:50,maxZoom:15,duration:0})}
+  $('#list').innerHTML=rows.length?rows.map(r=>{
+    const seen=r.observed_on?new Date(r.observed_on+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'';
+    const sent=new Date(r.created_at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    return `<article class="card item" id="it-${esc(r.id)}"><div>${r.photo?`<img src="${esc(photo(r.photo))}" alt="Submitted photo" data-big="${esc(photo(r.photo))}">`:''}</div><div>
+      <h3><span class="chip" style="color:${COL[r.category]||'#555'}">${esc(LAB[r.category]||r.category)}</span></h3>
+      <p class="muted">Seen ${esc(seen)} · sent ${esc(sent)} · ${(+r.lat).toFixed(5)}, ${(+r.lon).toFixed(5)}${r.category==='wildlife'?' (shown to the public only to about 1 km)':''} · <a href="#" data-fly="${r.lon},${r.lat}">show on map</a></p>
+      <p>${esc(r.description)}</p>
+      <p class="muted">Check before approving: no faces or number plates, no names or personal details, nothing offensive, and it is about the Longmarsh area.</p>
+      <div class="row">${r.approved?`<button data-act="unpub" data-id="${esc(r.id)}">Unpublish</button>`:`<button class="primary" data-act="approve" data-id="${esc(r.id)}">Approve and publish</button>`}
+        <button class="danger" data-act="reject" data-id="${esc(r.id)}" data-photo="${esc(r.photo||'')}">${r.approved?'Delete':'Reject and delete'}</button></div>
+    </div></article>`}).join(''):`<p class="muted">${VIEW==='wait'?'Nothing waiting. All caught up.':'Nothing published yet.'}</p>`;
+}
+document.addEventListener('click',async e=>{
+  const im=e.target.closest('[data-big]');if(im){$('#big img').src=im.dataset.big;$('#big').showModal();return}
+  const f=e.target.closest('[data-fly]');if(f){e.preventDefault();const [lo,la]=f.dataset.fly.split(',').map(Number);map.flyTo({center:[lo,la],zoom:16});window.scrollTo({top:0,behavior:'smooth'});return}
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const id=b.dataset.id,act=b.dataset.act;
+  if(act==='reject'&&!b.classList.contains('sure')){b.classList.add('sure');b.textContent='Tap again to delete for good';setTimeout(()=>{if(b.isConnected){b.classList.remove('sure');b.textContent='Reject and delete'}},4000);return}
+  b.disabled=true;
+  try{
+    if(act==='approve'||act==='unpub'){await api('/rest/v1/evidence?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({approved:act==='approve'})})}
+    if(act==='reject'){await api('/rest/v1/evidence?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{Prefer:'return=minimal'}});
+      if(b.dataset.photo){try{await api('/storage/v1/object/evidence/'+encodeURIComponent(b.dataset.photo),{method:'DELETE'})}catch(err){$('#msg').textContent='Entry deleted, but its photo could not be removed: '+err.message}}}
+    await load();
+  }catch(err){$('#msg').textContent='That didn\'t work: '+err.message;b.disabled=false}
+});
+// returning from an emailed sign-in link: tokens arrive in the address after #
+(function(){const h=new URLSearchParams(location.hash.slice(1));
+  if(h.get('access_token')){let email='';try{email=JSON.parse(atob(h.get('access_token').split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).email||''}catch(e){}
+    S=null;keep({access_token:h.get('access_token'),refresh_token:h.get('refresh_token'),expires_in:h.get('expires_in'),user:{email}});history.replaceState(null,'',HERE)}
+  else if(h.get('error_description')){$('#smsg').textContent='Sign-in link problem: '+h.get('error_description').replace(/\+/g,' ')+'. Please ask for a new link.';history.replaceState(null,'',HERE)}
+  else S=store.get();
+  show();
+})();
+</script>
+</body>
+</html>
