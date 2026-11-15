@@ -57,6 +57,11 @@ dialog img{max-width:95vw;max-height:90vh;border-radius:8px}
   </section>
   <section id="mod" hidden>
     <div class="tabs" role="tablist"><button data-t="wait" aria-selected="true">Waiting <span id="nw"></span></button><button data-t="pub" aria-selected="false">Published <span id="np"></span></button><button id="reload" style="margin-left:auto">Refresh</button></div>
+    <details class="card" id="pwcard"><summary><b>Set a password</b> <span class="muted">so you don't need an email link next time</span></summary>
+      <label for="np1" style="display:block;margin-top:8px">New password (at least 10 characters)</label>
+      <input type="password" id="np1" autocomplete="new-password">
+      <div class="row" style="margin-top:10px"><button id="npgo">Save password</button><span class="muted" id="npmsg"></span></div>
+    </details>
     <div id="map"></div>
     <div id="msg" class="muted"></div>
     <div id="list"></div>
@@ -80,11 +85,13 @@ async function api(path,opt={}){const t=await token();const r=await fetch(U+path
 const photo=n=>U+'/storage/v1/object/public/evidence/'+encodeURIComponent(n);
 
 $('#link').onclick=async()=>{const em=$('#em').value.trim();if(!em)return $('#smsg').textContent='Enter your email first.';
-  $('#link').disabled=true;try{await auth('otp?redirect_to='+encodeURIComponent(HERE),{email:em,create_user:true});$('#smsg').textContent='Check your inbox for a sign-in link from Supabase, and open it on this device.'}catch(e){$('#smsg').textContent='Could not send the link: '+e.message}finally{$('#link').disabled=false}};
+  $('#link').disabled=true;try{await auth('otp?redirect_to='+encodeURIComponent(HERE),{email:em,create_user:true});$('#smsg').innerHTML='Check your inbox, and your Spam and Promotions folders, for an email from <b>Supabase Auth</b>. Open the link once, in this same browser. Each link works only once.'}catch(e){$('#smsg').textContent=/rate limit/i.test(e.message)?'Too many sign-in emails in the last hour. Supabase\'s free email service only sends a couple an hour, so please try again later, or sign in with a password if you have set one.':'Could not send the link: '+e.message}finally{$('#link').disabled=false}};
 $('#pwgo').onclick=async()=>{try{const t=await auth('token?grant_type=password',{email:$('#em').value.trim(),password:$('#pw').value});keep(t);$('#pw').value='';show()}catch(e){$('#smsg').textContent='Sign-in failed: '+e.message}};
 $('#out').onclick=async()=>{try{await fetch(U+'/auth/v1/logout',{method:'POST',headers:{apikey:K,Authorization:'Bearer '+S.at}})}catch(e){}S=null;store.set(null);show()};
 document.querySelector('.tabs').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;VIEW=b.dataset.t;document.querySelectorAll('[data-t]').forEach(x=>x.setAttribute('aria-selected',x===b));render()};
 $('#reload').onclick=()=>load();
+$('#npgo').onclick=async()=>{const pw=$('#np1').value;if(pw.length<10)return $('#npmsg').textContent='Please use at least 10 characters.';
+  try{await api('/auth/v1/user',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});$('#np1').value='';$('#npmsg').textContent='Saved. Next time use "Sign in with a password instead".'}catch(e){$('#npmsg').textContent='Could not save: '+e.message}};
 $('#big').onclick=()=>$('#big').close();
 
 async function show(){
