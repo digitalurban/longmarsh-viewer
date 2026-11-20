@@ -263,6 +263,7 @@ body.dlg-open{overflow:hidden}
       <div class="legend" id="legend-official">
         <label class="lrow"><input type="checkbox" data-ov="flood"><span class="sw" style="background:linear-gradient(90deg,#08519c 0 50%,#6baed6 50%);opacity:.75"></span><span class="lname">Flood Zones 3 (dark) and 2 (light), rivers and sea</span><span class="ht">EA</span></label>
         <label class="lrow"><input type="checkbox" data-ov="alc"><span class="sw" style="background:linear-gradient(90deg,#0a7cff 0 25%,#75dcff 25% 50%,#007a00 50% 75%,#a6f5a6 75%);opacity:.85"></span><span class="lname">Agricultural land grade (Predictive ALC, as used in the Scoping Report)</span><span class="ht">Defra</span></label>
+        <label class="lrow" id="row-low"><input type="checkbox" data-ov="low"><span class="sw" style="background:linear-gradient(90deg,#a6f5a6 0 34%,#ffff66 34% 67%,#a5805f 67%)"></span><span class="lname">Lower-grade farmland (3b, 4, 5) within 25 km of Walpole</span><span class="ht">Defra</span></label>
         <label class="lrow"><input type="checkbox" data-ov="sw"><span class="sw" style="background:linear-gradient(90deg,#4b4b9c 0 33%,#9e9ed8 33% 66%,#cfe3ff 66%);opacity:.85"></span><span class="lname">Surface water flood risk (heavy rain)</span><span class="ht">EA</span></label>
         <label class="lrow"><input type="checkbox" data-ov="heritage"><span class="sw" style="background:#fff;border:2px dashed #6a3d9a;box-shadow:inset 0 0 0 3px #b2182b"></span><span class="lname">Heritage: listed buildings, scheduled monuments, parks, conservation areas</span><span class="ht">HE</span></label>
         <label class="lrow"><input type="checkbox" data-ov="nature"><span class="sw" style="background:repeating-linear-gradient(135deg,#7570b3 0 3px,transparent 3px 7px);border:2px solid #7570b3"></span><span class="lname">International wildlife sites (SPA, SAC, Ramsar) and ancient woodland</span><span class="ht">NE</span></label>
@@ -279,6 +280,7 @@ body.dlg-open{overflow:hidden}
       <div class="ovkey" id="key-heritage" hidden><span><i style="background:#67001f;border-radius:50%"></i>Listed building, Grade I</span><span><i style="background:#d6604d;border-radius:50%"></i>Listed building, Grade II*</span><span><i style="background:#f4a582;border-radius:50%"></i>Listed building, Grade II</span><span><i style="background:#8c510a"></i>Scheduled monument</span><span><i style="background:transparent;border:2px dashed #bf812d"></i>Registered park and garden</span><span><i style="background:transparent;border:2px dashed #6a3d9a"></i>Conservation area</span><small>Historic England National Heritage List and conservation areas, within 3 km of the site (the Scoping Report's study area). For undesignated archaeology and finds, search the <a href="https://www.heritage.norfolk.gov.uk/map-search" target="_blank" rel="noopener">Norfolk Heritage Explorer</a>.</small></div>
       <div class="ovkey" id="key-nature" hidden><span><i style="background:#7570b3"></i>Special Protection Area (birds)</span><span><i style="background:#1b9e77"></i>Special Area of Conservation (habitats)</span><span><i style="background:transparent;border:2px solid #1f78b4"></i>Ramsar wetland</span><span><i style="background:#4d7c0f"></i>Ancient woodland (within 3 km)</span><small>Natural England designations. SPAs, SACs and Ramsar sites have the strongest legal protection; ancient woodland is "irreplaceable habitat" in national policy.</small></div>
       <div class="ovkey" id="key-flood" hidden><span><i style="background:#08519c"></i>Flood Zone 3: high probability (1% river / 0.5% sea or more each year)</span><span><i style="background:#6baed6"></i>Flood Zone 2: medium probability</span><small>Environment Agency Flood Map for Planning, updated 22 Oct 2026. Ignores flood defences. Not for individual properties.</small></div>
+      <div class="ovkey" id="key-low" hidden><span><i style="background:#a6f5a6"></i>Grade 3b moderate</span><span><i style="background:#ffff66"></i>Grade 4 poor</span><span><i style="background:#a5805f"></i>Grade 5 very poor</span><span><i style="background:transparent;border:2px dashed #333"></i>25 km from Walpole substation</span><small>Land that the Defra Predictive ALC map expects to be below best and most versatile quality, in blocks of 5 ha or more, within 25 km of Walpole substation. National policy (EN-3) prefers lower-grade land for solar where agricultural land is needed. About 8,050 ha qualifies, about 5,290 ha of it outside SSSIs and international wildlife sites. Some of it will be woodland, heath, homes or otherwise unsuitable, and the map is a prediction, not a field survey. It shows where the developer\'s site search should have looked, not land that is necessarily available. Tap a block for its size and distance.</small><span style="margin-top:4px"><button type="button" class="btn" id="lowFit">Zoom out to the 25 km area</button></span></div>
       <div class="ovkey" id="key-alc" hidden><span><i style="background:#0a7cff"></i>Grade 1 excellent (BMV)</span><span><i style="background:#75dcff"></i>Grade 2 very good (BMV)</span><span><i style="background:#007a00"></i>Grade 3a good (BMV)</span><span><i style="background:#a6f5a6"></i>Grade 3b moderate</span><span><i style="background:#ffff66"></i>Grade 4 poor</span><span><i style="background:#a5805f"></i>Grade 5 very poor</span><span><i style="background:#ffc35a"></i>Non-agricultural</span><span><i style="background:#ff6457"></i>Urban</span><small>Defra Predictive Agricultural Land Classification Map for England (2026), the map used in the Scoping Report, loaded live from Defra in its official colours. It's a prediction for strategic use; field surveys give the definitive grade. BMV = best and most versatile land.</small></div>
       <div class="btnrow">
         <button class="btn" id="showFlood">Flood zones</button>
@@ -880,6 +882,7 @@ const OV={
   sssi:{url:'data/sssi.geojson?v='+DV,attr:'SSSIs: © Natural England copyright. Contains Ordnance Survey data © Crown copyright and database right (OGL)',loaded:false},
   alc:{attr:'Farmland grade: Predictive ALC Map for England © Defra copyright and/or database right (OGL)',loaded:true},
   evid:{url:'',attr:'Residents\' evidence (checked, not verified)',loaded:false},
+  low:{url:'data/lowgrade.geojson?v=20261120',attr:'Lower-grade land: Predictive ALC Map for England © Defra (OGL); designated sites © Natural England (OGL)',loaded:false},
   lbd:{url:'data/listed.geojson?v=20261115',attr:'Listed buildings: © Historic England 2026 (OGL)',loaded:false},
   bld:{url:'data/buildings.geojson?v=20261115b',plots:'data/plots.geojson?v=20261115b',attr:'Buildings: © OpenStreetMap contributors (ODbL)',lr:'Plot boundaries: HM Land Registry, Crown copyright 2026; polygons Crown copyright 2026 Ordnance Survey 100026316',loaded:false}};
 const ALC_WMS='https://environment.data.gov.uk/spatialdata/predictive-alc-england-raster/wms?service=WMS&version=1.3.0&request=GetMap&layers=Predictive_ALC_England_Raster&styles=&format=image/png&transparent=true&crs=EPSG:3857&width=256&height=256&bbox={bbox-epsg-3857}';
@@ -923,6 +926,10 @@ function addOfficialLayers(){
   map.addLayer({id:'plot-line',type:'line',source:'plots',minzoom:13,layout:{visibility:'none'},paint:{'line-color':PC(['get','gd']),'line-width':['interpolate',['linear'],['zoom'],13,0.8,17,2.2],'line-dasharray':[3,1.5]}});
   map.addLayer({id:'bld-fill',type:'fill',source:'bld',minzoom:12,layout:{visibility:'none'},paint:{'fill-color':PC(['coalesce',['get','gd'],['get','d']]),'fill-opacity':0.92}});
   map.addLayer({id:'bld-line',type:'line',source:'bld',minzoom:14,layout:{visibility:'none'},paint:{'line-color':'#333','line-width':0.6,'line-opacity':0.7}});
+  map.addSource('low',{type:'geojson',data:empty,attribution:OV.low.attr});
+  map.addLayer({id:'low-fill',type:'fill',source:'low',filter:['!=',['get','ring'],1],layout:{visibility:'none'},paint:{'fill-color':['match',['get','grade'],'3b','#a6f5a6','4','#ffff66','5','#a5805f','#ccc'],'fill-opacity':0.75}});
+  map.addLayer({id:'low-line',type:'line',source:'low',filter:['!=',['get','ring'],1],layout:{visibility:'none'},paint:{'line-color':'#3d5a2a','line-width':0.8}});
+  map.addLayer({id:'low-ring',type:'line',source:'low',filter:['==',['get','ring'],1],layout:{visibility:'none'},paint:{'line-color':'#222','line-width':2,'line-dasharray':[4,3]}});
   map.addSource('evid',{type:'geojson',data:empty,attribution:OV.evid.attr});
   const EC=['match',['get','category'],'road','#6a51a3','flood_houses','#08519c','flood_fields','#3182bd','flood_vicinity','#9ecae1','wildlife','#238b45','#555'];
   map.addLayer({id:'evid-halo',type:'circle',source:'evid',filter:['==',['get','category'],'wildlife'],layout:{visibility:'none'},paint:{'circle-radius':['interpolate',['exponential',2],['zoom'],10,12,14,190,16,760],'circle-color':'#238b45','circle-opacity':0.12,'circle-stroke-color':'#238b45','circle-stroke-width':1,'circle-stroke-opacity':0.5}});
@@ -937,7 +944,7 @@ function addOfficialLayers(){
 async function setOverlay(name,on){
   const o=OV[name];
   if(on&&!o.loaded){
-    try{toast({flood:'Loading Environment Agency flood zones…',sssi:'Loading Natural England SSSIs…',heritage:'Loading Historic England heritage data…',nature:'Loading Natural England wildlife sites…',lbd:'Loading listed buildings…',evid:'Loading residents\' evidence…',bld:'Loading building outlines…'}[name]||'Loading…');
+    try{toast({flood:'Loading Environment Agency flood zones…',sssi:'Loading Natural England SSSIs…',heritage:'Loading Historic England heritage data…',nature:'Loading Natural England wildlife sites…',lbd:'Loading listed buildings…',low:'Loading lower-grade farmland…',evid:'Loading residents\' evidence…',bld:'Loading building outlines…'}[name]||'Loading…');
       let d;if(name==='evid'){d=await evFetch()}else d=await fetch(o.url).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});map.getSource(name).setData(d);o.loaded=true;
       if(name==='bld')fetch(o.plots).then(r=>r.json()).then(j=>map.getSource('plots').setData(j)).catch(()=>{});
       if(name==='sssi'){const pts=d.features.map(f=>{let best=null,ba=-1;const polys=f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.coordinates;
@@ -947,7 +954,7 @@ async function setOverlay(name,on){
         map.getSource('sssi-pt').setData({type:'FeatureCollection',features:pts});map.getSource('sssi-lb').setData({type:'FeatureCollection',features:pts})}}
     catch(err){toast('Could not load this layer. If you opened the file directly, use the online viewer.');const i=document.querySelector(`[data-ov="${name}"]`);if(i)i.checked=false;return}
   }
-  const IDS={flood:['flood-fill','flood-line'],sssi:['sssi-fill','sssi-line','sssi-pt','sssi-lbl'],alc:['alc-fill'],sw:['sw-fill'],heritage:['ca-fill','ca-line','pg-fill','pg-line','sm-fill','sm-line','lb-pt'],nature:['nat-fill','nat-line','aw-fill'],bld:['plot-fill','plot-line','bld-fill','bld-line'],lbd:['lbd-fill','lbd-line','lbd-pt','lbd-lbl'],evid:['evid-halo','evid-pt']};
+  const IDS={flood:['flood-fill','flood-line'],sssi:['sssi-fill','sssi-line','sssi-pt','sssi-lbl'],alc:['alc-fill'],sw:['sw-fill'],heritage:['ca-fill','ca-line','pg-fill','pg-line','sm-fill','sm-line','lb-pt'],nature:['nat-fill','nat-line','aw-fill'],bld:['plot-fill','plot-line','bld-fill','bld-line'],lbd:['lbd-fill','lbd-line','lbd-pt','lbd-lbl'],evid:['evid-halo','evid-pt'],low:['low-fill','low-line','low-ring']};
   const ids=IDS[name];
   ids.forEach(id=>map.setLayoutProperty(id,'visibility',on?'visible':'none'));
   const i=document.querySelector(`[data-ov="${name}"]`);if(i)i.checked=on;
@@ -1170,6 +1177,7 @@ function bldPopup(lngLat,p){
    <p class="src">Building outline © OpenStreetMap contributors. It may not be a home, and OpenStreetMap may be missing some buildings.${p.gd!=null?' Plot outline: HM Land Registry and Ordnance Survey, Crown copyright and database rights 2026.':''}</p>`).addTo(map);
 }
 document.addEventListener('click',e=>{
+  if(e.target.id==='lowFit'){map.fitBounds([[-0.17,52.50],[0.57,52.95]],{padding:30,pitch:0});if(window.innerWidth<760&&typeof closePanel==='function')closePanel()}
   {const g=e.target.closest('[data-goto]');if(g){e.preventDefault();showTab(g.dataset.goto)}}
   if(e.target.id==='lbdList'){
     ldata('lbd',OV.lbd.url).then(d=>{const fs=(d.features||[]).filter(f=>!f.properties.outline);
@@ -1187,6 +1195,10 @@ document.addEventListener('click',e=>{
 
 map.on('click',e=>{
   if(EV.placing){evSetPin(e.lngLat.lng,e.lngLat.lat);return}
+  if(map.getLayer('low-fill')&&map.getLayoutProperty('low-fill','visibility')==='visible'){
+    const q=map.queryRenderedFeatures(e.point,{layers:['low-fill']})[0];
+    if(q){const p=q.properties;popup.setLngLat(e.lngLat).setHTML(`<b>${esc(p.label)}</b><div><span class="pub-chip" style="color:#3d5a2a;border-color:#3d5a2a">Predictive ALC (Defra)</span></div><dl class="dl"><dt>Size of this block</dt><dd>about ${(+p.ha).toLocaleString('en-GB')} ha${+p.ha_undesignated<+p.ha?` (${(+p.ha_undesignated).toLocaleString('en-GB')} ha outside designated wildlife sites)`:''}</dd><dt>Distance from Walpole substation</dt><dd>about ${esc(String(p.km))} km</dd></dl><p>Predicted to be below best and most versatile quality. Not field-surveyed, and it may include woodland, heath or other land unsuitable for solar.</p><p class="src">Predictive ALC Map for England © Defra (OGL).</p>`).addTo(map);return}
+  }
   if(map.getLayer('evid-pt')&&map.getLayoutProperty('evid-pt','visibility')==='visible'){
     const v=map.queryRenderedFeatures([[e.point.x-6,e.point.y-6],[e.point.x+6,e.point.y+6]],{layers:['evid-pt']})[0];
     if(v){evPopup(e.lngLat,v.properties);return}
@@ -1393,9 +1405,9 @@ function letterText(c,o){
   const intro=v(['I object for the following reasons.','My reasons are set out below.','My objections are as follows.']);
   const body=chosen.map((g,i)=>`${i+1}. ${g.title}\n${g.text(c)}`).join('\n\n');
   const close=v([
-    'Under section 49 of the Planning Act 2008 you must have regard to this response. Please include it in your Consultation Report, tell me how each point has been addressed, and keep me informed. I intend to register as an interested party with the Planning Inspectorate once the application is accepted.',
-    'Please take these points into account as section 49 of the Planning Act 2008 requires, include this letter in the Consultation Report, and explain how each point has been dealt with. I will also be registering as an interested party with the Planning Inspectorate when the application is accepted.',
-    'Section 49 of the Planning Act 2008 requires you to have regard to responses like this one. I ask that this letter appears in the Consultation Report with an explanation of how each point has been addressed, and that I am kept informed. I plan to register as an interested party once the Planning Inspectorate accepts the application.']);
+    'Please keep a record of this response and tell me how each point has been considered and addressed, as the Government\'s guidance on pre-application engagement expects, and keep me informed. I intend to register as an interested party with the Planning Inspectorate once the application is accepted.',
+    'Please take these points into account in your design, keep this letter on your engagement record, and explain how each point has been dealt with. I will also be registering as an interested party with the Planning Inspectorate when the application is accepted.',
+    'I ask that this letter is kept on your record of engagement, with an explanation of how each point has been considered and addressed, and that I am kept informed. I plan to register as an interested party once the Planning Inspectorate accepts the application.']);
   return {today,text:
 `${o.name.trim()||'[Your full name]'}
 [Your address]
